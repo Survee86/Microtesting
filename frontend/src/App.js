@@ -20,6 +20,7 @@ function App() {
           } 
         />
         <Route path="/" element={<LoginPage />} />
+        <Route path="/test1" element={<test1Page />} />
       </Routes>
     </div>
   );
