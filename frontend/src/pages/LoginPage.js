@@ -1,231 +1,145 @@
-// Импорт необходимых библиотек и компонентов
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // Хуки для навигации и ссылок
-import { Formik, Form, Field, ErrorMessage } from 'formik'; // Библиотека для работы с формами
-import * as Yup from 'yup'; // Библиотека для валидации
-import { // Компоненты Material-UI
-          Box,
-          Typography,
-          TextField,
-          Button,
-          CircularProgress,
-          Alert,
-          Grid,
-          Paper
-       } from '@mui/material';
-import { useAuth } from '../context/AuthContext'; // Хук для работы с авторизацией
-import { AuthService } from '../services/auth'; // Сервис аутентификации
+import {
+  AppBar,
+  Toolbar,
+  IconButton,
+  Menu,
+  MenuItem,
+  Typography,
+  Box,
+  Button,
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 
+const DropdownMenu = () => {
+  // Состояния для якорей меню
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [mobileAnchorEl, setMobileAnchorEl] = useState(null);
 
-// Схема валидации формы с помощью Yup
+  // Открытые/закрытые состояния меню
+  const [productsOpen, setProductsOpen] = useState(null);
+  const [servicesOpen, setServicesOpen] = useState(null);
+  const [companyOpen, setCompanyOpen] = useState(null);
 
-const LoginSchema = Yup.object().shape
-(
-  {
-      email: Yup.string()
-          .email('Некорректный email') // Проверка формата email
-          .required('Обязательное поле'), // Поле обязательно для заполнения
-      password: Yup.string()
-          .required('Обязательное поле') // Поле обязательно для заполнения
-  }
-);
+  // Обработчики для десктопного меню
+  const handleOpenMenu = (event, setter) => {
+    setter(event.currentTarget);
+  };
 
+  const handleCloseMenu = (setter) => {
+    setter(null);
+  };
 
+  // Обработчики для мобильного меню
+  const handleMobileMenuOpen = (event) => {
+    setMobileAnchorEl(event.currentTarget);
+  };
 
-// Основной компонент страницы входа
-export const LoginPage = () => 
-{
-        // Хук для программной навигации
-        const navigate = useNavigate();
-  
-        // Получаем метод login из контекста аутентификации
-        const { login } = useAuth();
-        
-        // Состояния компонента
-        const [error, setError] = useState(null); // Для ошибок
-        const [isLoading, setIsLoading] = useState(false); // Для индикатора загрузки
+  const handleMobileMenuClose = () => {
+    setMobileAnchorEl(null);
+  };
 
-        // Обработчик отправки формы
-        const handleSubmit = async (values) =>  {
-                                                        try   
-                                                              {
-                                                                  setIsLoading(true); // Включаем индикатор загрузки
-                                                                  setError(null);     // Сбрасываем ошибки
-                                                                  
-                                                                  // Вызываем сервис аутентификации
-                                                                  const { token, user } = await AuthService.login({
-                                                                    email: values.email,
-                                                                    password: values.password
-                                                                  });
+  // Пункты меню
+  const menuItems = [
+    {
+      name: 'Продукты',
+      state: productsOpen,
+      setter: setProductsOpen,
+      items: ['Продукт 1', 'Продукт 2', 'Продукт 3'],
+    },
+    {
+      name: 'Услуги',
+      state: servicesOpen,
+      setter: setServicesOpen,
+      items: ['Услуга 1', 'Услуга 2', 'Услуга 3'],
+    },
+    {
+      name: 'Компания',
+      state: companyOpen,
+      setter: setCompanyOpen,
+      items: ['О нас', 'Команда', 'Контакты'],
+    },
+  ];
 
-                                                                  // Вызываем метод login из контекста
-                                                                  login(token, user);
-                                                                  
-                                                                  // Перенаправляем в личный кабинет после успешного входа
-                                                                  navigate('/dashboard');
-                                                              } 
-                                                    
-                                                    catch (err) 
-                                                              {
-                                                                  console.error('Login error:', err);
-                                                                  // Показываем пользователю сообщение об ошибке
-                                                                  setError(err.response?.data?.message || 'Ошибка входа. Проверьте данные и попробуйте снова.');
-                                                              } 
-                                                    
-                                                    finally 
-                                                              {
+  return (
+    <AppBar position="static">
+      <Toolbar>
+        {/* Логотип или название */}
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          Мое приложение
+        </Typography>
 
-                                                                  setIsLoading(false); // Выключаем индикатор загрузки
-                                                              }
-                                                };
+        {/* Десктопное меню - скрывается на мобильных */}
+        <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
+          {menuItems.map((item) => (
+            <Box key={item.name}>
+              <Button
+                color="inherit"
+                onClick={(e) => handleOpenMenu(e, item.setter)}
+                aria-controls={`${item.name}-menu`}
+                aria-haspopup="true"
+              >
+                {item.name}
+              </Button>
+              <Menu
+                id={`${item.name}-menu`}
+                anchorEl={item.state}
+                open={Boolean(item.state)}
+                onClose={() => handleCloseMenu(item.setter)}
+                MenuListProps={{
+                  'aria-labelledby': `${item.name}-button`,
+                }}
+              >
+                {item.items.map((subItem) => (
+                  <MenuItem
+                    key={subItem}
+                    onClick={() => handleCloseMenu(item.setter)}
+                  >
+                    {subItem}
+                  </MenuItem>
+                ))}
+              </Menu>
+            </Box>
+          ))}
+        </Box>
 
-        
-        
-        
-        
-        
-        
-        
-        
-        // Рендер компонента
-        return    (
-                    // Контейнер страницы с центрированием
-                    <Box
-                            sx={{
-                              display: 'flex',
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                              minHeight: '100vh', // На всю высоту экрана
-                              backgroundColor: '#f5f5f5' // Фоновый цвет
-                            }}
-                    >
-
-
-                    {/* Бумажный эффект Material-UI */}
-
-
-                    <Paper 
-                            elevation={24} 
-                            sx= {
-                                  { 
-                                    p: 4, 
-                                    width: '100%', 
-                                    maxWidth: 500 
-                                  }
-                                }
-                    >
-
-
-                                        {/* Заголовок формы */}
-
-
-                                        <Typography 
-                                                variant="h4" 
-                                                component="h1" 
-                                                gutterBottom align="center">
-                                          Вход в систему
-                                        </Typography>
-
-                                        
-                                        {/* Блок для отображения ошибок */}
-
-
-                                        {error && (
-                                          <Alert severity="error" sx={{ mb: 3 }}>
-                                            {error}
-                                          </Alert>
-                                        )}
-
-                        
-                        
-                                      {/* Форма с использованием Formik */}
-
-
-                                      <Formik
-                                        initialValues={{ email: '', password: '' }}   // Начальные значения
-                                        validationSchema={LoginSchema}                // Схема валидации
-                                        onSubmit={handleSubmit}                       // Обработчик отправки
-                                      >
-                                        
-                                        {
-                                        ({ errors, touched }) => (
-                                          <Form>
-                                                          {/* Поле для email */}
-
-                                                          <Box mb={3}>
-                                                            <Field
-                                                              as={TextField} // Используем TextField из Material-UI
-                                                              name="email"
-                                                              label="Email"
-                                                              type="email"
-                                                              fullWidth
-                                                              variant="outlined"
-                                                              error={touched.email && !!errors.email} // Показываем ошибку
-                                                              helperText={<ErrorMessage name="email" />} // Текст ошибки
-                                                            />
-                                                          </Box>
-
-                                                          {/* Поле для пароля */}
-                                                          <Box mb={3}>
-                                                            <Field
-                                                              as={TextField}
-                                                              name="password"
-                                                              label="Пароль"
-                                                              type="password"
-                                                              fullWidth
-                                                              variant="outlined"
-                                                              error={touched.password && !!errors.password}
-                                                              helperText={<ErrorMessage name="password" />}
-                                                            />
-                                                          </Box>
-
-                                                          {/* Кнопка отправки формы */}
-
-                                                          <Button
-                                                            type="submit"
-                                                            variant="contained"
-                                                            color="primary"
-                                                            fullWidth
-                                                            size="large"
-                                                            disabled={isLoading} // Блокируем при загрузке
-                                                            startIcon={isLoading ? <CircularProgress size={20} /> : null}
-                                                            sx={{ mb: 2 }}
-                                                          >
-                                                            {isLoading ? 'Вход...' : 'Войти'}
-                                                          </Button>
-
-                                                          {/* Ссылки для навигации */}
-
-                                                          <Grid container justifyContent="space-between">
-                                                            
-                                                            <Grid item>
-                                                              <Typography variant="body2">
-                                                                Нет аккаунта?{' '}
-                                                                <Link to="/register" style={{ textDecoration: 'none' }}>
-                                                                  Зарегистрируйтесь
-                                                                </Link>
-                                                              </Typography>
-                                                            </Grid>
-
-                                                            <Grid item>
-                                                              <Typography variant="body2">
-                                                                <Link to="/forgot-password" style={{ textDecoration: 'none' }}>
-                                                                  Забыли пароль?
-                                                                </Link>
-                                                              </Typography>
-                                                            </Grid>
-
-                                                          </Grid>
-
-                                          </Form>
-                                        )
-                                        }
-
-                                      </Formik>
-
-
-                    </Paper>
-
-                    </Box>
-                  );
+        {/* Мобильное меню - появляется только на мобильных */}
+        <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
+          <IconButton
+            size="large"
+            aria-label="меню приложения"
+            aria-controls="mobile-menu"
+            aria-haspopup="true"
+            onClick={handleMobileMenuOpen}
+            color="inherit"
+          >
+            <MenuIcon />
+          </IconButton>
+          <Menu
+            id="mobile-menu"
+            anchorEl={mobileAnchorEl}
+            anchorOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+            keepMounted
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+            open={Boolean(mobileAnchorEl)}
+            onClose={handleMobileMenuClose}
+          >
+            {menuItems.map((item) => (
+              <MenuItem key={item.name} onClick={handleMobileMenuClose}>
+                <Typography textAlign="center">{item.name}</Typography>
+              </MenuItem>
+            ))}
+          </Menu>
+        </Box>
+      </Toolbar>
+    </AppBar>
+  );
 };
+
+export default DropdownMenu;
