@@ -1,145 +1,43 @@
 import React, { useState } from 'react';
-import {
-  AppBar,
-  Toolbar,
-  IconButton,
-  Menu,
-  MenuItem,
-  Typography,
-  Box,
-  Button,
-} from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
+import { BarChart } from '@mui/x-charts/BarChart';
+import TextField from '@mui/material/TextField';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Paper from '@mui/material/Paper';
 
-const DropdownMenu = () => {
-  // Состояния для якорей меню
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [mobileAnchorEl, setMobileAnchorEl] = useState(null);
+const NumberInputWithChart = () => {
+  const [value, setValue] = useState(0);
 
-  // Открытые/закрытые состояния меню
-  const [productsOpen, setProductsOpen] = useState(null);
-  const [servicesOpen, setServicesOpen] = useState(null);
-  const [companyOpen, setCompanyOpen] = useState(null);
-
-  // Обработчики для десктопного меню
-  const handleOpenMenu = (event, setter) => {
-    setter(event.currentTarget);
+  const handleChange = (e) => {
+    const num = parseFloat(e.target.value) || 0;
+    setValue(num);
   };
-
-  const handleCloseMenu = (setter) => {
-    setter(null);
-  };
-
-  // Обработчики для мобильного меню
-  const handleMobileMenuOpen = (event) => {
-    setMobileAnchorEl(event.currentTarget);
-  };
-
-  const handleMobileMenuClose = () => {
-    setMobileAnchorEl(null);
-  };
-
-  // Пункты меню
-  const menuItems = [
-    {
-      name: 'Продукты',
-      state: productsOpen,
-      setter: setProductsOpen,
-      items: ['Продукт 1', 'Продукт 2', 'Продукт 3'],
-    },
-    {
-      name: 'Услуги',
-      state: servicesOpen,
-      setter: setServicesOpen,
-      items: ['Услуга 1', 'Услуга 2', 'Услуга 3'],
-    },
-    {
-      name: 'Компания',
-      state: companyOpen,
-      setter: setCompanyOpen,
-      items: ['О нас', 'Команда', 'Контакты'],
-    },
-  ];
 
   return (
-    <AppBar position="static">
-      <Toolbar>
-        {/* Логотип или название */}
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Мое приложение
+    <Box sx={{ p: 3, maxWidth: 800, margin: 'auto' }}>
+      <Paper elevation={3} sx={{ p: 3 }}>
+        <Typography variant="h5" gutterBottom>
+          Введите число и смотрите график
         </Typography>
 
-        {/* Десктопное меню - скрывается на мобильных */}
-        <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
-          {menuItems.map((item) => (
-            <Box key={item.name}>
-              <Button
-                color="inherit"
-                onClick={(e) => handleOpenMenu(e, item.setter)}
-                aria-controls={`${item.name}-menu`}
-                aria-haspopup="true"
-              >
-                {item.name}
-              </Button>
-              <Menu
-                id={`${item.name}-menu`}
-                anchorEl={item.state}
-                open={Boolean(item.state)}
-                onClose={() => handleCloseMenu(item.setter)}
-                MenuListProps={{
-                  'aria-labelledby': `${item.name}-button`,
-                }}
-              >
-                {item.items.map((subItem) => (
-                  <MenuItem
-                    key={subItem}
-                    onClick={() => handleCloseMenu(item.setter)}
-                  >
-                    {subItem}
-                  </MenuItem>
-                ))}
-              </Menu>
-            </Box>
-          ))}
-        </Box>
+        <TextField
+          label="Число"
+          type="number"
+          value={value}
+          onChange={handleChange}
+          fullWidth
+          margin="normal"
+        />
 
-        {/* Мобильное меню - появляется только на мобильных */}
-        <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
-          <IconButton
-            size="large"
-            aria-label="меню приложения"
-            aria-controls="mobile-menu"
-            aria-haspopup="true"
-            onClick={handleMobileMenuOpen}
-            color="inherit"
-          >
-            <MenuIcon />
-          </IconButton>
-          <Menu
-            id="mobile-menu"
-            anchorEl={mobileAnchorEl}
-            anchorOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-            keepMounted
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-            open={Boolean(mobileAnchorEl)}
-            onClose={handleMobileMenuClose}
-          >
-            {menuItems.map((item) => (
-              <MenuItem key={item.name} onClick={handleMobileMenuClose}>
-                <Typography textAlign="center">{item.name}</Typography>
-              </MenuItem>
-            ))}
-          </Menu>
+        <Box sx={{ height: 400, mt: 3 }}>
+          <BarChart
+            series={[{ data: [value] }]}
+            xAxis={[{ scaleType: 'band', data: ['Значение'] }]}
+          />
         </Box>
-      </Toolbar>
-    </AppBar>
+      </Paper>
+    </Box>
   );
 };
 
-export default DropdownMenu;
+export default NumberInputWithChart;
