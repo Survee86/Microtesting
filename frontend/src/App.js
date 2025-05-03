@@ -11,6 +11,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegistrationPage />} />
+        <Route path="/test1" element={<TestPage />} />
         <Route 
           path="/dashboard" 
           element={
@@ -20,7 +21,7 @@ function App() {
           } 
         />
         <Route path="/" element={<LoginPage />} />
-        <Route path="/test1" element={<test1Page />} />
+        
       </Routes>
     </div>
   );
