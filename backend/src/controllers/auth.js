@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { createUser, findUserByEmail } from '../models/user.js';
-import { generateToken } from '../utils/jwt.js';
+import {generateTokens} from '../utils/jwt.js'
 
 export const register = async (req, res) => {
   try {
@@ -25,7 +25,7 @@ export const register = async (req, res) => {
     });
 
     // Генерация токена
-    const token = generateToken(user.id);
+    const token = generateTokens(user.id);
 
     res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name } });
   } catch (error) {

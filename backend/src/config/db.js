@@ -11,10 +11,13 @@ export const pool = new Pool({
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
+  max: 20, // Максимальное количество соединений
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
 // Проверка подключения
 pool.query('SELECT NOW()', (err) => {
   if (err) console.error('Database connection error', err.stack);
-  else console.log('Database connected');
+  else console.log('Database connected successfully');
 });
