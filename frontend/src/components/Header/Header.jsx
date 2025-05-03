@@ -1,5 +1,13 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, Button, Menu, MenuItem, Box } from '@mui/material';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Menu,
+  MenuItem,
+  Box,
+} from '@mui/material';
 import { Link } from 'react-router-dom';
 
 const Header = () => {
@@ -17,30 +25,54 @@ const Header = () => {
   };
 
   const menuItems = {
-    company: [
-      { name: 'О компании', path: '/about' },
-      { name: 'Команда', path: '/team' },
-      { name: 'Миссия', path: '/mission' },
-      { name: 'Контакты', path: '/contacts' }
-    ],
-    services: [
-      { name: 'Bannikoff', path: '/bannikoff' },
-      { name: 'Замечания Moex', path: '/moex-notes' },
-      { name: 'Опросы', path: '/survee' }
-    ],
-    offerings: [
-      { name: 'Разработка сайтов', path: '/web-dev' },
-      { name: 'Разработка приложений', path: '/app-dev' },
-      { name: 'Управление проектом', path: '/project-management' },
-      { name: 'Консалтинг', path: '/consulting' }
-    ]
+    company: {
+      name: 'Компания',
+      path: '/company',
+      children: [
+        { name: 'О компании', path: '/about' },
+        { name: 'Команда', path: '/team' },
+        { name: 'Миссия', path: '/mission' },
+        { name: 'Контакты', path: '/contacts' },
+      ],
+    },
+    services: {
+      name: 'Сервисы',
+      path: '/services',
+      children: [
+        { name: 'Bannikoff', path: '/bannikoff' },
+        { name: 'Замечания Moex', path: '/moex-notes' },
+      ],
+    },
+    offerings: {
+      name: 'Услуги',
+      path: '/offerings',
+      children: [
+        { name: 'Разработка сайтов', path: '/web-dev' },
+        { name: 'Разработка приложений', path: '/app-dev' },
+        { name: 'Управление проектом', path: '/project-management' },
+        { name: 'Консалтинг', path: '/consulting' },
+      ],
+    },
   };
 
   return (
-    <AppBar position="static" sx={{ backgroundColor: 'white', color: 'black', boxShadow: 'none' }}>
+    <AppBar
+      position="static"
+      sx={{
+        backgroundColor: 'white',
+        color: 'black',
+        borderBottom: '1px solid rgba(0, 0, 0, 0.12)', // Добавляем линию
+        boxShadow: '0 2px 4px -1px rgba(0,0,0,0.1)', // Тень для разделения
+      }}
+    >
       <Toolbar sx={{ justifyContent: 'space-between' }}>
         {/* Логотип */}
-        <Typography variant="h6" component={Link} to="/" sx={{ textDecoration: 'none', color: 'inherit' }}>
+        <Typography
+          variant="h6"
+          component={Link}
+          to="/"
+          sx={{ textDecoration: 'none', color: 'inherit' }}
+        >
           Survee
         </Typography>
 
@@ -53,19 +85,17 @@ const Header = () => {
                 onClick={(e) => handleMenuOpen(e, menuKey)}
                 sx={{ textTransform: 'capitalize' }}
               >
-                {menuKey === 'company' && 'Компания'}
-                {menuKey === 'services' && 'Сервисы'}
-                {menuKey === 'offerings' && 'Услуги'}
+                {menuItems[menuKey].name}
               </Button>
               <Menu
                 anchorEl={anchorEl}
                 open={activeMenu === menuKey}
                 onClose={handleMenuClose}
               >
-                {menuItems[menuKey].map((item) => (
-                  <MenuItem 
-                    key={item.path} 
-                    component={Link} 
+                {menuItems[menuKey].children.map((item) => (
+                  <MenuItem
+                    key={item.path}
+                    component={Link}
                     to={item.path}
                     onClick={handleMenuClose}
                   >
@@ -78,9 +108,9 @@ const Header = () => {
         </Box>
 
         {/* Личный кабинет */}
-        <Button 
-          color="inherit" 
-          component={Link} 
+        <Button
+          color="inherit"
+          component={Link}
           to="/auth"
           sx={{ textTransform: 'none' }}
         >

@@ -1,0 +1,16 @@
+/* src/components/Breadcrumbs/Breadcrumbs.css */
+.breadcrumbs-container {
+    padding: 12px 0;
+    background-color: #f8f9fa;
+  }
+  
+  .breadcrumbs-link {
+    text-decoration: none;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+  }
+  
+  .breadcrumbs-link:hover {
+    color: #007bff;
+  }
