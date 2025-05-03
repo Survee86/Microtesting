@@ -8,43 +8,33 @@ import {
   Button, 
   Typography, 
   Alert,
-  Link 
+  Link
 } from '@mui/material';
-import { register } from '../../services/auth/auth';
+import { login } from '../../services/auth'; // Проверьте этот путь
 
-const Register = () => {
+const LoginPage = () => {
   const navigate = useNavigate();
   const [error, setError] = useState('');
 
   const formik = useFormik({
     initialValues: {
-      name: '',
       email: '',
-      password: '',
-      confirmPassword: ''
+      password: ''
     },
     validationSchema: Yup.object({
-      name: Yup.string().required('Обязательное поле'),
       email: Yup.string()
         .email('Некорректный email')
         .required('Обязательное поле'),
       password: Yup.string()
-        .min(6, 'Минимум 6 символов')
-        .required('Обязательное поле'),
-      confirmPassword: Yup.string()
-        .oneOf([Yup.ref('password'), null], 'Пароли должны совпадать')
         .required('Обязательное поле')
     }),
     onSubmit: async (values, { setSubmitting }) => {
       try {
-        await register({
-          name: values.name,
-          email: values.email,
-          password: values.password
-        });
+        const response = await login(values);
+        localStorage.setItem('token', response.token);
         navigate('/dashboard');
       } catch (err) {
-        setError(err.response?.data?.message || 'Ошибка регистрации');
+        setError(err.response?.data?.message || 'Ошибка авторизации');
       } finally {
         setSubmitting(false);
       }
@@ -61,7 +51,7 @@ const Register = () => {
       borderRadius: 2
     }}>
       <Typography variant="h4" component="h1" gutterBottom align="center">
-        Регистрация
+        Вход в систему
       </Typography>
 
       {error && (
@@ -74,21 +64,8 @@ const Register = () => {
         <TextField
           fullWidth
           margin="normal"
-          label="Имя"
-          name="name"
-          value={formik.values.name}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          error={formik.touched.name && Boolean(formik.errors.name)}
-          helperText={formik.touched.name && formik.errors.name}
-        />
-
-        <TextField
-          fullWidth
-          margin="normal"
           label="Email"
           name="email"
-          type="email"
           value={formik.values.email}
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
@@ -109,19 +86,6 @@ const Register = () => {
           helperText={formik.touched.password && formik.errors.password}
         />
 
-        <TextField
-          fullWidth
-          margin="normal"
-          label="Подтвердите пароль"
-          name="confirmPassword"
-          type="password"
-          value={formik.values.confirmPassword}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
-          helperText={formik.touched.confirmPassword && formik.errors.confirmPassword}
-        />
-
         <Button
           type="submit"
           fullWidth
@@ -129,13 +93,13 @@ const Register = () => {
           sx={{ mt: 3, mb: 2 }}
           disabled={formik.isSubmitting}
         >
-          Зарегистрироваться
+          Войти
         </Button>
 
         <Typography variant="body2" align="center">
-          Уже есть аккаунт?{' '}
-          <Link href="/login" underline="hover">
-            Войти
+          Нет аккаунта?{' '}
+          <Link href="/register" underline="hover">
+            Зарегистрируйтесь
           </Link>
         </Typography>
       </Box>
@@ -143,4 +107,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default LoginPage;

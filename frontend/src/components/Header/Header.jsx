@@ -111,7 +111,7 @@ const Header = () => {
         <Button
           color="inherit"
           component={Link}
-          to="/auth"
+          to="/login"
           sx={{ textTransform: 'none' }}
         >
           Личный кабинет

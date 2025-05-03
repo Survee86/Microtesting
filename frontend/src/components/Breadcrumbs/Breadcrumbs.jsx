@@ -25,6 +25,11 @@ export const AppBreadcrumbs = () => {
   const location = useLocation();
   const currentPath = location.pathname;
 
+    // Скрываем для страниц авторизации
+    if (['/', '/register', '/login'].includes(currentPath)) {
+      return null;
+    }
+
   const buildPath = () => {
     const items = [];
     let current = currentPath;

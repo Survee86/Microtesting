@@ -1,11 +1,12 @@
 import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home/Home';
-import Auth from './pages/Auth/Auth';
+import Login from './pages/Auth/Login';
 import Dashboard from './pages/Dashboard/Dashboard';
 import ContentPage from './pages/ContentPage/ContentPage';
 import Header from './components/Header/Header';
 import Register from './pages/Auth/Register';
 import AppBreadcrumbs from './components/Breadcrumbs/Breadcrumbs';
+import Team from './pages/Team/Team';
 
 function App() {
   return (
@@ -21,7 +22,7 @@ function App() {
           {/* Основные маршруты */}
           
           <Route path="/"           element={<Home />} />
-          <Route path="/auth"       element={<Auth />} />
+          <Route path="/login"       element={<Login />} />
           <Route path="/dashboard"  element={<Dashboard />} />
           <Route path="/register"   element={<Register />} />
 
@@ -29,7 +30,7 @@ function App() {
 
           <Route path="/company" element={<div>Страница компании</div>} />
           <Route path="/about" element={<ContentPage title="О компании" />} />
-          <Route path="/team" element={<ContentPage title="Команда" />} />
+          <Route path="/team" element={<Team />} />
           <Route path="/mission" element={<ContentPage title="Миссия" />} />
           <Route path="/contacts" element={<ContentPage title="Контакты" />} />
 

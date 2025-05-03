@@ -1,0 +1,17 @@
+/* Добавьте в конец файла */
+.slick-prev:before, 
+.slick-next:before {
+  color: #1976d2 !important;
+}
+
+.slick-dots li button:before {
+  color: #1976d2 !important;
+}
+
+
+.slick-arrow {
+  z-index: 10 !important;
+}
+.slick-slide {
+  transition: transform 0.3s ease !important;
+}
