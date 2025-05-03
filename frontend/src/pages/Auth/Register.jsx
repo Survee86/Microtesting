@@ -1,22 +1,12 @@
 import React, { useState } from 'react';
-import { 
-  TextField, 
-  Button, 
-  Box, 
-  Typography,
-  Stack
-} from '@mui/material';
+import { TextField, Button, Box, Typography, Stack } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
-
-
-
-
 
 const Register = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: ''
+    password: '',
   });
   const navigate = useNavigate();
 
@@ -28,29 +18,38 @@ const Register = () => {
 
   return (
     <Box 
-      component="form" 
+  sx={{
+    display: 'flex',
+    justifyContent: 'center', // Горизонтальное центрирование
+    alignItems: 'center',    // Вертикальное центрирование
+    minHeight: '100vh',      // На всю высоту экрана
+    p: 2                    // Отступы по краям
+  }}
+>
+    <Box
+      component="form"
       onSubmit={handleSubmit}
       sx={{
         maxWidth: 400,
         mx: 'auto',
         p: 3,
         boxShadow: 3,
-        borderRadius: 2
+        borderRadius: 2,
       }}
     >
-      <Typography variant="h4" align="center" gutterBottom>
+      <Typography variant="h5" gutterBottom align="center">
         Регистрация
       </Typography>
-      
+
       <TextField
         label="Имя"
         fullWidth
         margin="normal"
         required
         value={formData.name}
-        onChange={(e) => setFormData({...formData, name: e.target.value})}
+        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
       />
-      
+
       <TextField
         label="Email"
         type="email"
@@ -58,9 +57,9 @@ const Register = () => {
         margin="normal"
         required
         value={formData.email}
-        onChange={(e) => setFormData({...formData, email: e.target.value})}
+        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
       />
-      
+
       <TextField
         label="Пароль"
         type="password"
@@ -68,23 +67,19 @@ const Register = () => {
         margin="normal"
         required
         value={formData.password}
-        onChange={(e) => setFormData({...formData, password: e.target.value})}
+        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
       />
-      
+
       <Stack spacing={2} sx={{ mt: 3 }}>
         <Button type="submit" variant="contained" size="large">
           Зарегистрироваться
         </Button>
-        
-        <Button 
-          component={Link}
-          to="/auth"
-          variant="outlined" 
-          size="large"
-        >
+
+        <Button component={Link} to="/auth" variant="outlined" size="large">
           Уже есть аккаунт? Войти
         </Button>
       </Stack>
+      </Box>
     </Box>
   );
 };

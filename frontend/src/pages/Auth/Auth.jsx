@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import { 
-  TextField, 
-  Button, 
-  Box, 
-  Typography, 
-  Stack, 
-  Link as MuiLink 
+import {
+  TextField,
+  Button,
+  Box,
+  Typography,
+  Stack,
+  Link as MuiLink,
 } from '@mui/material';
-import { Link, useNavigate } from 'react-router-dom'; // Добавляем Link
+import { Link, useNavigate } from 'react-router-dom';
 import './Auth.css';
-
-
 
 const Auth = () => {
   const [login, setLogin] = useState('');
@@ -22,27 +20,33 @@ const Auth = () => {
     navigate('/dashboard');
   };
 
-  
-  
-  
-  
   return (
-    <div className="auth-page">
-      <Box 
-        component="form" 
-        onSubmit={handleSubmit} 
-        className="auth-form"
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        p: 2,
+      }}
+    >
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
         sx={{
-          width: 350,
+          width: '100%',
+          maxWidth: 400,
           p: 3,
           boxShadow: 3,
-          borderRadius: 2
+          borderRadius: 2,
+          bgcolor: 'background.paper',
         }}
       >
         <Typography variant="h5" gutterBottom align="center">
           Вход в личный кабинет
         </Typography>
-        
+
+        {/* Поля формы остаются без изменений */}
         <TextField
           label="Логин"
           variant="outlined"
@@ -52,7 +56,7 @@ const Auth = () => {
           value={login}
           onChange={(e) => setLogin(e.target.value)}
         />
-        
+
         <TextField
           label="Пароль"
           type="password"
@@ -63,21 +67,16 @@ const Auth = () => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        
+
         <Stack spacing={2} sx={{ mt: 2 }}>
-          <Button 
-            type="submit" 
-            variant="contained" 
-            fullWidth
-            size="large"
-          >
+          <Button type="submit" variant="contained" fullWidth size="large">
             Войти
           </Button>
-          
-          <Button 
+
+          <Button
             component={Link} // Используем Link как компонент
             to="/register" // Указываем путь
-            variant="outlined" 
+            variant="outlined"
             fullWidth
             size="large"
           >
@@ -86,16 +85,16 @@ const Auth = () => {
         </Stack>
 
         <Box sx={{ mt: 2, textAlign: 'center' }}>
-          <MuiLink 
+          <MuiLink
             component={Link} // Используем Link для MUI
-            to="/forgot-password" 
+            to="/forgot-password"
             variant="body2"
           >
             Забыли пароль?
           </MuiLink>
         </Box>
       </Box>
-    </div>
+    </Box>
   );
 };
 
