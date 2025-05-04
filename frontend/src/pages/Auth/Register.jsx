@@ -10,11 +10,64 @@ import {
   Alert,
   Link 
 } from '@mui/material';
-import { register } from '../../services/auth/auth';
+import axios from 'axios';
 
 const Register = () => {
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const validationSchema = Yup.object({
+    name: Yup.string().required('Обязательное поле'),
+    email: Yup.string()
+      .email('Некорректный email')
+      .required('Обязательное поле'),
+    password: Yup.string()
+      .min(6, 'Минимум 6 символов')
+      .required('Обязательное поле'),
+    confirmPassword: Yup.string()
+      .oneOf([Yup.ref('password'), null], 'Пароли должны совпадать')
+      .required('Обязательное поле')
+  });
+
+  const handleSubmit = async (values) => {
+    setIsSubmitting(true);
+    setError('');
+    
+    try {
+      const response = await axios.post(
+        'http://localhost:3001/api/auth/register',
+        {
+          name: values.name,
+          email: values.email,
+          password: values.password
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data.success) {
+        if (response.data.token) {
+          localStorage.setItem('token', response.data.token);
+        }
+        navigate('/dashboard');
+      } else {
+        setError(response.data.message || 'Ошибка регистрации');
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      setError(
+        err.response?.data?.message || 
+        err.message || 
+        'Ошибка регистрации. Пожалуйста, попробуйте позже.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const formik = useFormik({
     initialValues: {
@@ -23,32 +76,8 @@ const Register = () => {
       password: '',
       confirmPassword: ''
     },
-    validationSchema: Yup.object({
-      name: Yup.string().required('Обязательное поле'),
-      email: Yup.string()
-        .email('Некорректный email')
-        .required('Обязательное поле'),
-      password: Yup.string()
-        .min(6, 'Минимум 6 символов')
-        .required('Обязательное поле'),
-      confirmPassword: Yup.string()
-        .oneOf([Yup.ref('password'), null], 'Пароли должны совпадать')
-        .required('Обязательное поле')
-    }),
-    onSubmit: async (values, { setSubmitting }) => {
-      try {
-        await register({
-          name: values.name,
-          email: values.email,
-          password: values.password
-        });
-        navigate('/dashboard');
-      } catch (err) {
-        setError(err.response?.data?.message || 'Ошибка регистрации');
-      } finally {
-        setSubmitting(false);
-      }
-    }
+    validationSchema,
+    onSubmit: handleSubmit
   });
 
   return (
@@ -70,7 +99,7 @@ const Register = () => {
         </Alert>
       )}
 
-      <Box component="form" onSubmit={formik.handleSubmit} noValidate>
+      <form onSubmit={formik.handleSubmit}>
         <TextField
           fullWidth
           margin="normal"
@@ -127,9 +156,9 @@ const Register = () => {
           fullWidth
           variant="contained"
           sx={{ mt: 3, mb: 2 }}
-          disabled={formik.isSubmitting}
+          disabled={isSubmitting}
         >
-          Зарегистрироваться
+          {isSubmitting ? 'Регистрация...' : 'Зарегистрироваться'}
         </Button>
 
         <Typography variant="body2" align="center">
@@ -138,7 +167,7 @@ const Register = () => {
             Войти
           </Link>
         </Typography>
-      </Box>
+      </form>
     </Box>
   );
 };
