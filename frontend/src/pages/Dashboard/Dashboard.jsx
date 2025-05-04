@@ -29,16 +29,23 @@ const Dashboard = () => {
     const fetchUserData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:3001/api/user', {
-          headers: { Authorization: `Bearer ${token}` }
+        const [userResponse, profileResponse] = await Promise.all([
+          axios.get('http://localhost:3001/api/user', {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get('http://localhost:3001/api/profile', {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ]);
+        
+        setUser({
+          ...userResponse.data,
+          ...profileResponse.data
         });
-        setUser(response.data);
       } catch (error) {
         console.error('Ошибка загрузки данных:', error);
-        setSnackbar({ open: true, message: 'Ошибка загрузки данных', severity: 'error' });
       }
     };
-    fetchUserData();
   }, []);
 
   const handleEdit = (field) => {
@@ -46,23 +53,25 @@ const Dashboard = () => {
     setTempValue(user[field]);
   };
 
-  const handleSave = async (field) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.patch(
-        'http://localhost:3001/api/user',
-        { [field]: tempValue },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      setUser({ ...user, [field]: tempValue });
-      setEditingField(null);
-      setSnackbar({ open: true, message: 'Данные успешно обновлены', severity: 'success' });
-    } catch (error) {
-      console.error('Ошибка обновления:', error);
-      setSnackbar({ open: true, message: 'Ошибка обновления данных', severity: 'error' });
-    }
-  };
+// Для обновления данных
+const handleSave = async (field) => {
+  try {
+    const token = localStorage.getItem('token');
+    const endpoint = ['firstName', 'lastName', 'email'].includes(field) 
+      ? '/api/user' 
+      : '/api/profile';
+    
+    await axios.patch(
+      `http://localhost:3001${endpoint}`,
+      { [field]: tempValue },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    
+    await fetchUserData();
+  } catch (error) {
+    console.error('Ошибка обновления:', error);
+  }
+};
 
   const handleCancel = () => {
     setEditingField(null);

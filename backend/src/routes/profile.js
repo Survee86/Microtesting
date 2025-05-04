@@ -1,3 +1,6 @@
+
+/* для MongoDB */
+
 import express from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { getProfile, updateProfile } from '../controllers/profile.js';

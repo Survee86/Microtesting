@@ -1,4 +1,5 @@
 import pg from 'pg';
+import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -21,3 +22,15 @@ pool.query('SELECT NOW()', (err) => {
   if (err) console.error('Database connection error', err.stack);
   else console.log('Database connected successfully');
 });
+
+export const connectMongoDB = async () => {
+  try {
+    await mongoose.connect('mongodb://localhost:27017/survee', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+    console.log('MongoDB connected');
+  } catch (err) {
+    console.error('MongoDB connection error:', err);
+  }
+};
