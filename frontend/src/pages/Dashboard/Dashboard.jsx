@@ -57,19 +57,39 @@ const Dashboard = () => {
 const handleSave = async (field) => {
   try {
     const token = localStorage.getItem('token');
-    const endpoint = ['firstName', 'lastName', 'email'].includes(field) 
-      ? '/api/user' 
-      : '/api/profile';
-    
-    await axios.patch(
-      `http://localhost:3001${endpoint}`,
-      { [field]: tempValue },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    
-    await fetchUserData();
+    if (!token) throw new Error('Требуется авторизация');
+
+    console.log('Отправка данных:', { field, value: tempValue });
+
+    // Явно указываем метод PATCH
+    const response = await axios({
+      method: 'PATCH',
+      url: 'http://localhost:3001/api/user',
+      data: { [field]: tempValue },
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      withCredentials: true
+    });
+
+    console.log('Успешный ответ:', response.data);
+    setUser(prev => ({ ...prev, [field]: tempValue }));
+    setSnackbar({ open: true, message: 'Данные сохранены!', severity: 'success' });
   } catch (error) {
-    console.error('Ошибка обновления:', error);
+    console.error('Полная ошибка:', {
+      message: error.message,
+      response: error.response?.data,
+      config: error.config
+    });
+    
+    setSnackbar({ 
+      open: true, 
+      message: error.response?.data?.message || error.message || 'Ошибка сети',
+      severity: 'error' 
+    });
+  } finally {
+    setEditingField(null);
   }
 };
 
