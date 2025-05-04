@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { pool } from '../config/db.js';
 import { createUser, findUserByEmail } from '../models/user.js';
 import { generateTokens } from '../utils/jwt.js';
 
@@ -35,13 +36,13 @@ export const register = async (req, res) => {
       name
     });
 
-    // Генерация токенов (обернуто в try-catch)
+    // Генерация токенов с автоматическим сроком действия (из jwt.js)
     let tokens;
     try {
       tokens = generateTokens({ userId: user.id });
     } catch (tokenError) {
       console.error('Ошибка генерации токена:', tokenError);
-      // Удаляем пользователя, если не смогли сгенерировать токен
+      // Откат создания пользователя при ошибке
       await pool.query('DELETE FROM users WHERE id = $1', [user.id]);
       return res.status(500).json({ 
         success: false,
@@ -49,11 +50,11 @@ export const register = async (req, res) => {
       });
     }
 
-    // Успешный ответ
+    // Успешный ответ с accessToken
     return res.status(201).json({ 
       success: true,
       message: 'Регистрация успешна',
-      token: tokens.accessToken,
+      token: tokens.accessToken, // Теперь tokens содержит { accessToken }
       user: { 
         id: user.id, 
         email: user.email, 
@@ -64,7 +65,7 @@ export const register = async (req, res) => {
   } catch (error) {
     console.error('Ошибка регистрации:', error);
     
-    // Если пользователь был создан, но произошла другая ошибка
+    // Откат при других ошибках
     if (user?.id) {
       try {
         await pool.query('DELETE FROM users WHERE id = $1', [user.id]);
@@ -81,7 +82,6 @@ export const register = async (req, res) => {
   }
 };
 
-// Добавьте эту функцию, если её нет
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -94,6 +94,7 @@ export const login = async (req, res) => {
       });
     }
 
+    // Проверка пароля
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
       return res.status(400).json({ 
@@ -102,11 +103,12 @@ export const login = async (req, res) => {
       });
     }
 
+    // Генерация токенов с автоматическим сроком действия
     const tokens = generateTokens({ userId: user.id });
 
     return res.json({
       success: true,
-      token: tokens.accessToken,
+      token: tokens.accessToken, // Теперь tokens содержит { accessToken }
       user: {
         id: user.id,
         email: user.email,

@@ -8,11 +8,15 @@ import {
   MenuItem,
   Box,
 } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Header = () => {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [activeMenu, setActiveMenu] = React.useState(null);
+  const navigate = useNavigate();
+
+  // Проверяем, авторизован ли пользователь
+  const isAuthenticated = !!localStorage.getItem('token');
 
   const handleMenuOpen = (event, menuName) => {
     setAnchorEl(event.currentTarget);
@@ -22,6 +26,11 @@ const Header = () => {
   const handleMenuClose = () => {
     setAnchorEl(null);
     setActiveMenu(null);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
   };
 
   const menuItems = {
@@ -61,8 +70,8 @@ const Header = () => {
       sx={{
         backgroundColor: 'white',
         color: 'black',
-        borderBottom: '1px solid rgba(0, 0, 0, 0.12)', // Добавляем линию
-        boxShadow: '0 2px 4px -1px rgba(0,0,0,0.1)', // Тень для разделения
+        borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+        boxShadow: '0 2px 4px -1px rgba(0,0,0,0.1)',
       }}
     >
       <Toolbar sx={{ justifyContent: 'space-between' }}>
@@ -107,15 +116,35 @@ const Header = () => {
           ))}
         </Box>
 
-        {/* Личный кабинет */}
-        <Button
-          color="inherit"
-          component={Link}
-          to="/login"
-          sx={{ textTransform: 'none' }}
-        >
-          Личный кабинет
-        </Button>
+        {/* Личный кабинет или кнопка выхода */}
+        {isAuthenticated ? (
+          <Box sx={{ display: 'flex', gap: '10px' }}>
+            <Button
+              color="inherit"
+              component={Link}
+              to="/dashboard"
+              sx={{ textTransform: 'none' }}
+            >
+              Личный кабинет
+            </Button>
+            <Button
+              color="inherit"
+              onClick={handleLogout}
+              sx={{ textTransform: 'none' }}
+            >
+              Выйти
+            </Button>
+          </Box>
+        ) : (
+          <Button
+            color="inherit"
+            component={Link}
+            to="/login"
+            sx={{ textTransform: 'none' }}
+          >
+            Личный кабинет
+          </Button>
+        )}
       </Toolbar>
     </AppBar>
   );
