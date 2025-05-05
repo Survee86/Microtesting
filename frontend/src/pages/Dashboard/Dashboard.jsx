@@ -64,7 +64,7 @@ const handleSave = async (field) => {
     // Явно указываем метод PATCH
     const response = await axios({
       method: 'PATCH',
-      url: 'http://localhost:3001/api/user',
+      url: '/api/user',
       data: { [field]: tempValue },
       headers: {
         'Authorization': `Bearer ${token}`,

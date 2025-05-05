@@ -14,11 +14,12 @@ const PORT = process.env.PORT || 3001;
 app.use (cors   ({
                       origin: 'http://localhost:5173', // Укажите здесь адрес вашего фронтенда
                       credentials: true, // Если вы используете куки или аутентификацию
-                      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Разрешенные методы
+                      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // Разрешенные методы
                       allowedHeaders: ['Content-Type', 'Authorization'] // Разрешенные заголовки
                 })
         )
 
+app.options('*', cors());        
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -37,17 +38,6 @@ async function main() {
 }
 
 main().catch(console.error);
-
-// Добавьте в app.js для проверки
-app.get("/test-db", async (req, res) => {
-  try {
-    const users = await User.find({});
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 
 
 
