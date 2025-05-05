@@ -8,9 +8,8 @@
     "migrate": "node src/migrations/create-tables.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "AfanasevDA",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
@@ -23,5 +22,14 @@
     "pg": "^8.15.6",
     "uuid": "^11.1.0"
   },
-  "type": "module"
+  "type": "module",
+  "description": "reinstall dependences",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Survee86/Microtesting.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Survee86/Microtesting/issues"
+  },
+  "homepage": "https://github.com/Survee86/Microtesting#readme"
 }
