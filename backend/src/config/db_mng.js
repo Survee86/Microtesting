@@ -4,7 +4,7 @@ import { MongoClient } from 'mongodb';
 // Если MongoDB требует аутентификации, используйте формат:
 // 'mongodb://username:password@localhost:27017/databaseName'
 const url = 'mongodb://admin:admin@localhost:27017';
-const dbName = 'survee'; // Замените на имя вашей БД
+const dbName = 'survee';
 
 let client;
 let db;
@@ -46,6 +46,47 @@ async function listAllDatabasesAndCollections() {
       
       if (collections.length > 0) {
         collections.forEach(collection => console.log(`  - ${collection.name}`));
+
+        
+        
+        
+        
+        // Добавляем тестовый документ в базу survee, коллекцию users
+        if (dbInfo.name === 'survee') {
+          const usersCollection = currentDb.collection('users');
+          
+          // Проверяем, существует ли коллекция users
+          const collectionExists = collections.some(coll => coll.name === 'users');
+          
+          if (collectionExists) {
+            const testUser = {
+              username: 'test_user',
+              email: 'test@example.com',
+              createdAt: new Date(),
+              status: 'active',
+              roles: ['user'],
+              metadata: {
+                lastLogin: null,
+                loginCount: 0
+              }
+            };
+
+            try {
+              const result = await usersCollection.insertOne(testUser);
+              console.log(`\nAdded test user to 'survee.users' with ID: ${result.insertedId}`);
+            } catch (insertError) {
+              console.error('\nError adding test user:', insertError.message);
+            }
+          } else {
+            console.log('\nCollection "users" does not exist in "survee" database');
+          }
+        }
+
+
+
+
+
+
       } else {
         console.log('  (no collections)');
       }

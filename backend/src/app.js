@@ -4,13 +4,20 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js';
 import profileRoutes from './routes/profile.js';
 import { connectToDatabase } from './config/db_mng.js';
+import cors from "cors";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-
+app.use (cors   ({
+                      origin: 'http://localhost:5173', // Укажите здесь адрес вашего фронтенда
+                      credentials: true, // Если вы используете куки или аутентификацию
+                      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Разрешенные методы
+                      allowedHeaders: ['Content-Type', 'Authorization'] // Разрешенные заголовки
+                })
+        )
 
 
 app.use(express.json());
@@ -30,6 +37,16 @@ async function main() {
 }
 
 main().catch(console.error);
+
+// Добавьте в app.js для проверки
+app.get("/test-db", async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 
