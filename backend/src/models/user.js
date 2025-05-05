@@ -1,4 +1,4 @@
-import { pool } from '../config/db.js';
+import { pool } from '../config/db_pg.js';
 import mongoose from 'mongoose'; // Явный импорт mongoose
 import { v4 as uuidv4 } from 'uuid';
 
@@ -49,7 +49,7 @@ export const createUser = async (userData) => {
         createdAt: new Date(),
       });
 
-    console.log('Insert result:', insertResult);      
+    console.log('Insert result:', insertResult);
 
     await client.query('COMMIT');
 

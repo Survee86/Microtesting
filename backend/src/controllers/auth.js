@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { pool } from '../config/db.js';
+import { pool } from '../config/db_pg.js';
 import { createUser, findUserByEmail } from '../models/user.js';
 import { generateTokens } from '../utils/jwt.js';
 

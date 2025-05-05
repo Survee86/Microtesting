@@ -1,9 +1,10 @@
 import pg from 'pg';
-import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
+
+// ПОДКЛЮЧЕНИЕ К POSTGRESQL
 const { Pool } = pg;
 
 export const pool = new Pool({

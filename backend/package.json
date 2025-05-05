@@ -31,5 +31,8 @@
   "bugs": {
     "url": "https://github.com/Survee86/Microtesting/issues"
   },
-  "homepage": "https://github.com/Survee86/Microtesting#readme"
+  "homepage": "https://github.com/Survee86/Microtesting#readme",
+  "devDependencies": {
+    "@types/node": "^22.15.3"
+  }
 }
