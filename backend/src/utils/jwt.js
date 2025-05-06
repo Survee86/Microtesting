@@ -25,16 +25,63 @@ export const generateTokens = (payload) => {
 };
 
 /**
- * Верификация токена
- * @param {String} token - JWT токен
- * @returns {Object|Boolean} Декодированные данные или false при ошибке
+ * Верифицирует JWT access token
+ * @param {string} token - JWT токен для верификации
+ * @returns {Promise<object|false>} Декодированные данные токена или false при ошибке
+ * @throws {Error} Пробрасывает оригинальную ошибку jwt.verify для точной обработки в middleware
  */
-export const verifyAccessToken = (token) => {
+export const verifyAccessToken = async (token) => {
+  // 1. Проверяем наличие токена
+  if (!token || typeof token !== 'string') {
+    console.error('Ошибка верификации: токен не предоставлен или не строка');
+    return false;
+  }
+
   try {
-    return jwt.verify(token, JWT_SECRET);
+    // 2. Верифицируем токен с использованием секретного ключа
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET,
+      {
+        algorithms: ['HS256'], // Явно указываем алгоритм для безопасности
+        ignoreExpiration: false // Не игнорируем срок действия
+      }
+    );
+    
+    // 3. Логируем успешную верификацию (только в development)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Токен успешно верифицирован для пользователя ID:', decoded.userId);
+    }
+    
+    return decoded;
+    
   } catch (err) {
-    console.error('JWT verification error:', err.message);
-    return null;
+    // 4. Детально логируем ошибки верификации
+    switch (err.name) {
+      case 'TokenExpiredError':
+        console.error('Ошибка верификации: токен просрочен', {
+          expiredAt: err.expiredAt,
+          currentTime: new Date()
+        });
+        break;
+        
+      case 'JsonWebTokenError':
+        console.error('Ошибка верификации: недействительный токен', {
+          message: err.message,
+          token: token.slice(0, 10) + '...' // Логируем часть токена для отладки
+        });
+        break;
+        
+      default:
+        console.error('Неизвестная ошибка верификации токена:', {
+          name: err.name,
+          message: err.message,
+          stack: err.stack
+        });
+    }
+    
+    // 5. Пробрасываем ошибку для обработки в middleware
+    throw err;
   }
 };
 
