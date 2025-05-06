@@ -96,6 +96,16 @@ export const login = async (req, res) => {
       });
     }
 
+    // Проверка хэша пароля
+    if (!user.password_hash) {
+      console.error('Password hash is missing for user:', user.id);
+      return res.status(500).json({
+        success: false,
+        message: 'Ошибка сервера: отсутствует хеш пароля',
+      });
+    }
+
+
     // Проверка пароля
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
