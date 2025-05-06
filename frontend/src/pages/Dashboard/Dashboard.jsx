@@ -52,7 +52,7 @@ const Dashboard = () => {
             headers: { Authorization: `Bearer ${token}` } // Передаем токен в заголовке
           }),
           axios.get('http://localhost:3001/api/profile', {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` } // Передаем токен в заголовке
           })
         ]);
         
