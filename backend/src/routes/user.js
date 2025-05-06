@@ -1,5 +1,3 @@
-
-
 /* для PostgreSQL */
 
 import express from 'express';

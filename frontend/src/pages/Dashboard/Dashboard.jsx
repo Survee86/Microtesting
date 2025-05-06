@@ -1,14 +1,14 @@
 // Импорт необходимых модулей из React и сторонних библиотек
 import React, { useState, useEffect } from 'react'; // Базовые хуки React
 import { 
-                Box, // Контейнер для layout
-                Typography, // Текстовые элементы
-                Paper, // Карточка с тенями
-                TextField, // Поле ввода
-                IconButton, // Кнопка с иконкой
-                Button, // Обычная кнопка
-                Snackbar, // Всплывающее уведомление
-                Alert // Компонент alert для Snackbar
+  Box, // Контейнер для layout
+  Typography, // Текстовые элементы
+  Paper, // Карточка с тенями
+  TextField, // Поле ввода
+  IconButton, // Кнопка с иконкой
+  Button, // Обычная кнопка
+  Snackbar, // Всплывающее уведомление
+  Alert // Компонент alert для Snackbar
 } from '@mui/material'; // Компоненты Material-UI
 import EditIcon from '@mui/icons-material/Edit'; // Иконка редактирования
 import SaveIcon from '@mui/icons-material/Save'; // Иконка сохранения
@@ -36,105 +36,144 @@ const Dashboard = () => {
     severity: 'success' // Тип уведомления (success/error/info/warning)
   });
 
-// Эффект для загрузки данных пользователя при монтировании компонента
-useEffect(() => {
-  // Асинхронная функция для получения данных пользователя
-  const fetchUserData = async () => {
+  /**
+   * Функция для выполнения запросов с автоматическим обновлением токена
+   * @param {string} url - URL для запроса
+   * @param {object} options - Опции запроса (headers, method и т.д.)
+   * @returns {Promise} - Результат запроса
+   */
+  const fetchWithRefresh = async (url, options = {}) => {
     try {
-      // Получаем токен из localStorage
-      const token = localStorage.getItem('token');
-      console.log('[Диагностика] Токен авторизации:', token); // Диагностика
-
-
-      // Проверяем наличие токена
-      if (!token) {
-        console.error('[Ошибка] Токен авторизации отсутствует');
-        setSnackbar({
-          open: true,
-          message: 'Требуется авторизация. Пожалуйста, войдите в систему',
-          severity: 'error'
-        });
-        return;
-      }
-
-      
-      // Параллельно выполняем два запроса:
-      // 1. Запрос основных данных пользователя
-      // 2. Запрос данных профиля
-      const [userResponse, profileResponse] = await Promise.all([
-        
-        axios.get('http://localhost:3001/api/user', {
-          headers: { Authorization: `Bearer ${token}` } // Передаем токен в заголовке
-        }).catch(err => {
-          console.error('[Диагностика] Ошибка запроса /api/user:', {
-            status: err.response?.status,
-            data: err.response?.data,
-            headers: err.response?.headers
-          });
-          throw err;
-        }),
-
-        axios.get('http://localhost:3001/api/profile', {
-          headers: { Authorization: `Bearer ${token}` }
-        }).catch(err => {
-          console.error('[Диагностика] Ошибка запроса /api/profile:', {
-            status: err.response?.status,
-            data: err.response?.data,
-            headers: err.response?.headers
-          });
-          throw err;
-        })
-      ]);
-
-      console.log('[Диагностика] Ответ /api/user:', userResponse.data); // Логирование
-      console.log('[Диагностика] Ответ /api/profile:', profileResponse.data); // Логирование
-      
-      // Объединяем полученные данные
-      const mergedData = {
-        ...userResponse.data,
-        ...profileResponse.data
-      };
-
-      console.log('[Диагностика] Объединенные данные перед сохранением:', mergedData); // Диагностика
-      
-      // Сохраняем объединенные данные в состояние
-      setUser(mergedData);
+      // Пытаемся выполнить оригинальный запрос
+      return await axios(url, options);
     } catch (error) {
-      console.error('[Ошибка]', error.response?.data || error.message);
-      
-      // Обработка ошибки 403
-      if (error.response?.status === 403) {
-        // Удаляем недействительный токен
-        localStorage.removeItem('token');
-        
-        setSnackbar({
-          open: true,
-          message: 'Сессия истекла. Пожалуйста, войдите снова',
-          severity: 'error'
-        });
-        
-        // Перенаправляем на страницу входа
-        // window.location.href = '/login'; // Раскомментировать при наличии роутинга
-      } else {
-        setSnackbar({
-          open: true,
-          message: 'Ошибка загрузки данных',
-          severity: 'error'
-        });
+      // Если ошибка связана с просроченным токеном (код TOKEN_EXPIRED)
+      if (error.response?.data?.code === 'TOKEN_EXPIRED') {
+        try {
+          // Получаем refreshToken из localStorage
+          const refreshToken = localStorage.getItem('refreshToken');
+          
+          // Запрашиваем новый access token
+          const { data } = await axios.post('/api/auth/refresh', { refreshToken });
+          
+          // Сохраняем новый токен
+          localStorage.setItem('token', data.token);
+          
+          // Обновляем заголовок Authorization для повторного запроса
+          const newOptions = {
+            ...options,
+            headers: {
+              ...options.headers,
+              Authorization: `Bearer ${data.token}`
+            }
+          };
+          
+          // Повторяем оригинальный запрос с новым токеном
+          return await axios(url, newOptions);
+        } catch (refreshError) {
+          // Если не удалось обновить токен - разлогиниваем пользователя
+          console.error('Ошибка обновления токена:', refreshError);
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          setSnackbar({
+            open: true,
+            message: 'Сессия истекла. Пожалуйста, войдите снова',
+            severity: 'error'
+          });
+          throw refreshError;
+        }
       }
+      // Для всех других ошибок просто пробрасываем исключение
+      throw error;
     }
   };
 
-  // Вызываем функцию загрузки данных
-  fetchUserData();
-}, []); // Пустой массив зависимостей = выполняется только при монтировании
+  // Эффект для загрузки данных пользователя при монтировании компонента
+  useEffect(() => {
+    /**
+     * Асинхронная функция для получения данных пользователя
+     * с обработкой обновления токена
+     */
+    const fetchUserData = async () => {
+      try {
+        // Получаем токен из localStorage
+        const token = localStorage.getItem('token');
+        console.log('[Диагностика] Токен авторизации:', token); // Диагностика
 
+        // Проверяем наличие токена
+        if (!token) {
+          console.error('[Ошибка] Токен авторизации отсутствует');
+          setSnackbar({
+            open: true,
+            message: 'Требуется авторизация. Пожалуйста, войдите в систему',
+            severity: 'error'
+          });
+          return;
+        }
+        
+        // Конфигурация заголовков для запросов
+        const authHeader = { Authorization: `Bearer ${token}` };
+        
+        // Параллельно выполняем два запроса через fetchWithRefresh:
+        const [userResponse, profileResponse] = await Promise.all([
+          fetchWithRefresh('http://localhost:3001/api/user', { headers: authHeader })
+            .catch(err => {
+              console.error('[Диагностика] Ошибка запроса /api/user:', {
+                status: err.response?.status,
+                data: err.response?.data,
+                headers: err.response?.headers
+              });
+              throw err;
+            }),
+          
+          fetchWithRefresh('http://localhost:3001/api/profile', { headers: authHeader })
+            .catch(err => {
+              console.error('[Диагностика] Ошибка запроса /api/profile:', {
+                status: err.response?.status,
+                data: err.response?.data,
+                headers: err.response?.headers
+              });
+              throw err;
+            })
+        ]);
 
+        console.log('[Диагностика] Ответ /api/user:', userResponse.data);
+        console.log('[Диагностика] Ответ /api/profile:', profileResponse.data);
+        
+        // Объединяем полученные данные
+        const mergedData = {
+          ...userResponse.data,
+          ...profileResponse.data
+        };
 
+        console.log('[Диагностика] Объединенные данные:', mergedData);
+        setUser(mergedData);
+        
+      } catch (error) {
+        console.error('[Ошибка]', error.response?.data || error.message);
+        
+        // Обработка ошибки 403 (Forbidden)
+        if (error.response?.status === 403) {
+          localStorage.removeItem('token');
+          setSnackbar({
+            open: true,
+            message: 'Сессия истекла. Пожалуйста, войдите снова',
+            severity: 'error'
+          });
+        } else {
+          setSnackbar({
+            open: true,
+            message: 'Ошибка загрузки данных',
+            severity: 'error'
+          });
+        }
+      }
+    };
 
+    // Вызываем функцию загрузки данных
+    fetchUserData();
+  }, []); // Пустой массив зависимостей = выполняется только при монтировании
 
-
-  
   // Обработчик начала редактирования поля
   const handleEdit = (field) => {
     setEditingField(field); // Устанавливаем какое поле редактируется
@@ -144,81 +183,72 @@ useEffect(() => {
   // Обработчик сохранения изменений поля
   const handleSave = async (field) => {
     try {
-      // Получаем токен из localStorage
       const token = localStorage.getItem('token');
       if (!token) throw new Error('Требуется авторизация');
 
-      // Отправляем PATCH-запрос на сервер для обновления данных
-      const response = await axios({
-        method: 'PATCH', // Метод запроса
-        url: '/api/user', // Эндпоинт
-        data: { [field]: tempValue }, // Данные для обновления (поле и новое значение)
+      // Используем fetchWithRefresh вместо прямого вызова axios
+      await fetchWithRefresh('/api/user', {
+        method: 'PATCH',
+        data: { [field]: tempValue },
         headers: {
-          'Authorization': `Bearer ${token}`, // Токен авторизации
-          'Content-Type': 'application/json' // Тип содержимого
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
-        withCredentials: true // Использовать credentials
+        withCredentials: true
       });
 
-      // При успешном ответе:
-      // 1. Обновляем состояние пользователя
+      // Обновляем состояние только после успешного запроса
       setUser(prev => ({ ...prev, [field]: tempValue }));
-      // 2. Показываем уведомление об успехе
       setSnackbar({ open: true, message: 'Данные сохранены!', severity: 'success' });
+      
     } catch (error) {
-      // При ошибке:
-      // 1. Логируем полную информацию об ошибке
-      console.error('Полная ошибка:', {
+      console.error('Ошибка сохранения:', {
         message: error.message,
         response: error.response?.data,
         config: error.config
       });
       
-      // 2. Показываем уведомление с ошибкой
       setSnackbar({ 
         open: true, 
         message: error.response?.data?.message || error.message || 'Ошибка сети',
         severity: 'error' 
       });
     } finally {
-      // В любом случае завершаем редактирование
       setEditingField(null);
     }
   };
 
   // Обработчик отмены редактирования
   const handleCancel = () => {
-    setEditingField(null); // Просто сбрасываем поле редактирования
+    setEditingField(null);
   };
 
-  // Вспомогательная функция для рендеринга поля
+  /**
+   * Вспомогательная функция для рендеринга поля профиля
+   * @param {string} label - Отображаемое название поля
+   * @param {string} field - Ключ поля в объекте user
+   * @returns {JSX.Element} - React-элемент поля
+   */
   const renderField = (label, field) => (
     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-      {/* Лейбл поля */}
       <Typography variant="subtitle1" sx={{ width: 150 }}>{label}:</Typography>
       
-      {/* Если поле в режиме редактирования */}
       {editingField === field ? (
         <>
-          {/* Поле ввода */}
           <TextField
             size="small"
             value={tempValue}
-            onChange={(e) => setTempValue(e.target.value)} // Обновляем временное значение
+            onChange={(e) => setTempValue(e.target.value)}
             sx={{ flexGrow: 1 }}
           />
-          {/* Кнопка сохранения */}
           <IconButton onClick={() => handleSave(field)} color="primary">
             <SaveIcon />
           </IconButton>
-          {/* Кнопка отмены */}
           <Button onClick={handleCancel}>Отмена</Button>
         </>
       ) : (
         <>
-          {/* Отображение значения поля */}
           <Typography sx={{ flexGrow: 1 }}>{user[field] || 'Не указано'}</Typography>
-          {/* Кнопка редактирования */}
           <IconButton onClick={() => handleEdit(field)}>
             <EditIcon />
           </IconButton>
@@ -230,19 +260,14 @@ useEffect(() => {
   // Основной рендер компонента
   return (
     <div className="dashboard-page">
-      {/* Основной контейнер */}
       <Box sx={{ p: 3 }}>
-        {/* Заголовок страницы */}
         <Typography variant="h4" gutterBottom>
           Личный кабинет
         </Typography>
         
-        {/* Карточка с профилем пользователя */}
         <Paper elevation={3} sx={{ p: 3, mt: 2 }}>
-          {/* Заголовок карточки */}
           <Typography variant="h6" gutterBottom>Профиль пользователя</Typography>
           
-          {/* Рендер полей профиля */}
           {renderField('Фамилия', 'lastName')}
           {renderField('Имя', 'firstName')}
           {renderField('Email', 'email')}
@@ -250,13 +275,11 @@ useEffect(() => {
         </Paper>
       </Box>
 
-      {/* Компонент для показа уведомлений */}
       <Snackbar
-        open={snackbar.open} // Контроль видимости
-        autoHideDuration={6000} // Время автоматического закрытия (6 сек)
-        onClose={() => setSnackbar({ ...snackbar, open: false })} // Обработчик закрытия
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
       >
-        {/* Текст уведомления с типом (success/error и т.д.) */}
         <Alert severity={snackbar.severity}>
           {snackbar.message}
         </Alert>

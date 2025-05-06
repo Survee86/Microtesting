@@ -99,12 +99,26 @@ export const findUserByEmail = async (email) => {
 };
 
 export const getUserById = async (id) => {
-  const result = await pool.query(
-    `SELECT id, email, first_name as "firstName", last_name as "lastName", birth_date as "birthDate" 
-     FROM users WHERE id = $1`,
+  // 1. Получаем базовые данные из PostgreSQL
+  const pgResult = await pool.query(
+    `SELECT id, email, guid FROM users WHERE id = $1`,
     [id]
   );
-  return result.rows[0];
+  
+  if (!pgResult.rows.length) return null;
+
+  // 2. Получаем профиль из MongoDB
+  const mongoUser = await mongoose.connection.db
+    .collection('users')
+    .findOne({ postgresId: id });
+
+  // 3. Возвращаем объединённые данные
+  return {
+    id: pgResult.rows[0].id,
+    email: pgResult.rows[0].email,
+    name: mongoUser?.name || '', // Берём имя из MongoDB
+    // Остальные поля должны браться из профиля (MongoDB)
+  };
 };
 
 export const updateUser = async (id, fields) => {

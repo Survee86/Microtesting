@@ -5,6 +5,7 @@ import { generateTokens } from '../utils/jwt.js';
 
 // ФУНКЦИЯ РЕГИСТРАЦИИ ПОЛЬЗОВАТЕЛЯ
 
+
 export const register = async (req, res) => {
   let user;
   try {
@@ -85,10 +86,8 @@ export const register = async (req, res) => {
 };
 
 
-
-
-/* 
-    Рекомендации для дальнейшей разработки:
+/* Рекомендации для дальнейшей разработки:
+    
     
     1. Добавьте валидацию пароля при регистрации
           Минимальная длина (например, 8 символов)
@@ -102,7 +101,6 @@ export const register = async (req, res) => {
     4. Добавьте JWT-проверку в защищённые роуты
           Создайте middleware для проверки токена
 */
-
 
 
 export const login = async (req, res) => {
@@ -158,5 +156,31 @@ export const login = async (req, res) => {
       success: false,
       message: 'Ошибка сервера',
     });
+  }
+};
+
+
+export const refreshToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    
+    if (!refreshToken) {
+      return res.status(400).json({ message: 'Refresh token отсутствует' });
+    }
+
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const newAccessToken = jwt.sign(
+      { userId: decoded.userId },
+      process.env.JWT_SECRET,
+      { expiresIn: '15m' } // Новый токен на 15 минут
+    );
+
+    res.json({ 
+      token: newAccessToken,
+      expiresIn: 15 * 60 * 1000 // Время жизни в миллисекундах
+    });
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    res.status(401).json({ message: 'Недействительный refresh token' });
   }
 };
