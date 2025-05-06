@@ -44,6 +44,19 @@ useEffect(() => {
       // Получаем токен из localStorage
       const token = localStorage.getItem('token');
       console.log('[Диагностика] Токен авторизации:', token); // Диагностика
+
+
+      // Проверяем наличие токена
+      if (!token) {
+        console.error('[Ошибка] Токен авторизации отсутствует');
+        setSnackbar({
+          open: true,
+          message: 'Требуется авторизация. Пожалуйста, войдите в систему',
+          severity: 'error'
+        });
+        return;
+      }
+
       
       // Параллельно выполняем два запроса:
       // 1. Запрос основных данных пользователя
@@ -87,23 +100,28 @@ useEffect(() => {
       // Сохраняем объединенные данные в состояние
       setUser(mergedData);
     } catch (error) {
-      // Обработка ошибок при загрузке данных
-      console.error('[Диагностика] Полная ошибка при загрузке данных:', {
-        message: error.message,
-        config: error.config,
-        response: {
-          status: error.response?.status,
-          data: error.response?.data,
-          headers: error.response?.headers
-        }
-      });
+      console.error('[Ошибка]', error.response?.data || error.message);
       
-      // Показываем уведомление об ошибке
-      setSnackbar({
-        open: true,
-        message: 'Не удалось загрузить данные профиля',
-        severity: 'error'
-      });
+      // Обработка ошибки 403
+      if (error.response?.status === 403) {
+        // Удаляем недействительный токен
+        localStorage.removeItem('token');
+        
+        setSnackbar({
+          open: true,
+          message: 'Сессия истекла. Пожалуйста, войдите снова',
+          severity: 'error'
+        });
+        
+        // Перенаправляем на страницу входа
+        // window.location.href = '/login'; // Раскомментировать при наличии роутинга
+      } else {
+        setSnackbar({
+          open: true,
+          message: 'Ошибка загрузки данных',
+          severity: 'error'
+        });
+      }
     }
   };
 
