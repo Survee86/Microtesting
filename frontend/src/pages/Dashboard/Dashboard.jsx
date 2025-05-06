@@ -1,14 +1,14 @@
 // Импорт необходимых модулей из React и сторонних библиотек
 import React, { useState, useEffect } from 'react'; // Базовые хуки React
 import { 
-  Box, // Контейнер для layout
-  Typography, // Текстовые элементы
-  Paper, // Карточка с тенями
-  TextField, // Поле ввода
-  IconButton, // Кнопка с иконкой
-  Button, // Обычная кнопка
-  Snackbar, // Всплывающее уведомление
-  Alert // Компонент alert для Snackbar
+                Box, // Контейнер для layout
+                Typography, // Текстовые элементы
+                Paper, // Карточка с тенями
+                TextField, // Поле ввода
+                IconButton, // Кнопка с иконкой
+                Button, // Обычная кнопка
+                Snackbar, // Всплывающее уведомление
+                Alert // Компонент alert для Snackbar
 } from '@mui/material'; // Компоненты Material-UI
 import EditIcon from '@mui/icons-material/Edit'; // Иконка редактирования
 import SaveIcon from '@mui/icons-material/Save'; // Иконка сохранения
@@ -36,41 +36,87 @@ const Dashboard = () => {
     severity: 'success' // Тип уведомления (success/error/info/warning)
   });
 
-  // Эффект для загрузки данных пользователя при монтировании компонента
-  useEffect(() => {
-    // Асинхронная функция для получения данных пользователя
-    const fetchUserData = async () => {
-      try {
-        // Получаем токен из localStorage
-        const token = localStorage.getItem('token');
+// Эффект для загрузки данных пользователя при монтировании компонента
+useEffect(() => {
+  // Асинхронная функция для получения данных пользователя
+  const fetchUserData = async () => {
+    try {
+      // Получаем токен из localStorage
+      const token = localStorage.getItem('token');
+      console.log('[Диагностика] Токен авторизации:', token); // Диагностика
+      
+      // Параллельно выполняем два запроса:
+      // 1. Запрос основных данных пользователя
+      // 2. Запрос данных профиля
+      const [userResponse, profileResponse] = await Promise.all([
         
-        // Параллельно выполняем два запроса:
-        // 1. Запрос основных данных пользователя
-        // 2. Запрос данных профиля
-        const [userResponse, profileResponse] = await Promise.all([
-          axios.get('http://localhost:3001/api/user', {
-            headers: { Authorization: `Bearer ${token}` } // Передаем токен в заголовке
-          }),
-          axios.get('http://localhost:3001/api/profile', {
-            headers: { Authorization: `Bearer ${token}` } // Передаем токен в заголовке
-          })
-        ]);
-        
-        // Объединяем полученные данные и сохраняем в состояние
-        setUser({
-          ...userResponse.data, // Данные из /api/user
-          ...profileResponse.data // Данные из /api/profile
-        });
-      } catch (error) {
-        // Обработка ошибок при загрузке данных
-        console.error('Ошибка загрузки данных:', error);
-      }
-    };
+        axios.get('http://localhost:3001/api/user', {
+          headers: { Authorization: `Bearer ${token}` } // Передаем токен в заголовке
+        }).catch(err => {
+          console.error('[Диагностика] Ошибка запроса /api/user:', {
+            status: err.response?.status,
+            data: err.response?.data,
+            headers: err.response?.headers
+          });
+          throw err;
+        }),
 
-    // Вызываем функцию загрузки данных
-    fetchUserData();
-  }, []); // Пустой массив зависимостей = выполняется только при монтировании
+        axios.get('http://localhost:3001/api/profile', {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(err => {
+          console.error('[Диагностика] Ошибка запроса /api/profile:', {
+            status: err.response?.status,
+            data: err.response?.data,
+            headers: err.response?.headers
+          });
+          throw err;
+        })
+      ]);
 
+      console.log('[Диагностика] Ответ /api/user:', userResponse.data); // Логирование
+      console.log('[Диагностика] Ответ /api/profile:', profileResponse.data); // Логирование
+      
+      // Объединяем полученные данные
+      const mergedData = {
+        ...userResponse.data,
+        ...profileResponse.data
+      };
+
+      console.log('[Диагностика] Объединенные данные перед сохранением:', mergedData); // Диагностика
+      
+      // Сохраняем объединенные данные в состояние
+      setUser(mergedData);
+    } catch (error) {
+      // Обработка ошибок при загрузке данных
+      console.error('[Диагностика] Полная ошибка при загрузке данных:', {
+        message: error.message,
+        config: error.config,
+        response: {
+          status: error.response?.status,
+          data: error.response?.data,
+          headers: error.response?.headers
+        }
+      });
+      
+      // Показываем уведомление об ошибке
+      setSnackbar({
+        open: true,
+        message: 'Не удалось загрузить данные профиля',
+        severity: 'error'
+      });
+    }
+  };
+
+  // Вызываем функцию загрузки данных
+  fetchUserData();
+}, []); // Пустой массив зависимостей = выполняется только при монтировании
+
+
+
+
+
+
+  
   // Обработчик начала редактирования поля
   const handleEdit = (field) => {
     setEditingField(field); // Устанавливаем какое поле редактируется
