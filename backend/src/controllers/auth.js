@@ -87,28 +87,32 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log('Login attempt for email:', email); // Логирование
+    
     const user = await findUserByEmail(email);
+    console.log('Found user:', user); // Логирование найденного пользователя
 
     if (!user) {
+      console.log('User not found for email:', email);
       return res.status(400).json({
         success: false,
         message: 'Неверные учетные данные',
       });
     }
 
-    // Проверка хэша пароля
     if (!user.password_hash) {
-      console.error('Password hash is missing for user:', user.id);
+      console.error('Password hash missing for user:', user.id);
       return res.status(500).json({
         success: false,
         message: 'Ошибка сервера: отсутствует хеш пароля',
       });
     }
 
-
-    // Проверка пароля
+    console.log('Comparing password with hash:', user.password_hash);
     const isMatch = await bcrypt.compare(password, user.password_hash);
+    
     if (!isMatch) {
+      console.log('Password mismatch for user:', user.id);
       return res.status(400).json({
         success: false,
         message: 'Неверные учетные данные',

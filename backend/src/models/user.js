@@ -68,9 +68,9 @@ export const createUser = async (userData) => {
 
 export const findUserByEmail = async (email) => {
   try {
-    // 1. Поиск в PostgreSQL
+    // 1. Поиск в PostgreSQL (теперь включаем password_hash в запрос)
     const pgResult = await pool.query(
-      'SELECT id, guid, email FROM users WHERE email = $1',
+      'SELECT id, guid, email, password_hash FROM users WHERE email = $1',
       [email]
     );
 
@@ -90,6 +90,7 @@ export const findUserByEmail = async (email) => {
     return {
       ...pgResult.rows[0],
       name: mongoUser.name,
+      password_hash: pgResult.rows[0].password_hash // Явно добавляем password_hash
     };
   } catch (error) {
     console.error('Error in findUserByEmail:', error);
