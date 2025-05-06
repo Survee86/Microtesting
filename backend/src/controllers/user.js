@@ -2,14 +2,31 @@ import { getUserById, updateUser } from '../models/user.js';
 
 export const getCurrentUser = async (req, res) => {
   try {
+    console.log('Fetching user with ID:', req.user.userId); // Логирование
     const user = await getUserById(req.user.userId);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json(user);
+    
+    if (!user) {
+      console.log('User not found with ID:', req.user.userId);
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Убедимся, что возвращаем только необходимые поля
+    const { id, email, first_name, last_name } = user;
+    res.json({ 
+      id,
+      email,
+      firstName: first_name, 
+      lastName: last_name
+    });
+    
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ 
       message: 'Server error',
-      ...(process.env.NODE_ENV === 'development' && { error: error.message })
+      ...(process.env.NODE_ENV === 'development' && { 
+        error: error.message,
+        stack: error.stack
+      })
     });
   }
 };
