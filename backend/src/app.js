@@ -6,8 +6,8 @@ import userRoutes     from './routes/user.js';
 import profileRoutes  from './routes/profile.js'; */
 
 import cors from "cors";
-import { mng_connection } from './4_db_services/db_config/db_mng.js';
-import { pg_connection  } from './4_db_services/db_config/db_pg.js';
+import { survee_connection } from './4_db_services/db_config/db_mng.js';
+import { pg_connection     } from './4_db_services/db_config/db_pg.js';
 
 dotenv.config();
 
@@ -36,7 +36,7 @@ async function checkDatabaseConnections() {
   try {
     // Проверка MongoDB
     try {
-      const { survee_db } = await mng_connection();
+      const { survee_db } = await survee_connection();
       await survee_db.command({ ping: 1 });
       console.log('app.js / checkDatabaseConnections() - MongoDB connection check: OK');
     } catch (mongoError) {
