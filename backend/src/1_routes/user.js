@@ -1,8 +1,8 @@
 /* для PostgreSQL */
 
 import express from 'express';
-import { authenticate } from '../middleware/auth.js';
-import { getCurrentUser, updateCurrentUser } from '../controllers/user.js';
+import { authenticate } from '../2_middleware/auth.js';
+import { getCurrentUser, updateCurrentUser } from '../3_controllers/user.js';
 
 const router = express.Router();
 

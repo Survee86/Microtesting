@@ -1,12 +1,12 @@
-import { pool } from '../config/db_pg.js';
-import mongoose from 'mongoose'; // Явный импорт mongoose
+import { mng_connection } from '../db_config/db_mng.js';
+import { pg_connection } from '../db_config/db_pg.js';
 import { v4 as uuidv4 } from 'uuid';
 
 export const createUser = async (userData) => {
   // Принимаем объект userData
   const { email, password, name } = userData; // Деструктурируем параметры
   const guid = uuidv4();
-  const client = await pool.connect();
+  const client = await pg_connection.connect();
 
   try {
     await client.query('BEGIN');
@@ -20,11 +20,6 @@ export const createUser = async (userData) => {
     );
 
     const user = result.rows[0];
-
-    // Проверяем подключение MongoDB
-    if (!mongoose.connection.readyState) {
-      throw new Error('MongoDB connection is not established');
-    }
 
     // Вставка в MongoDB
     console.log('Inserting to MongoDB:', {
@@ -90,7 +85,7 @@ export const findUserByEmail = async (email) => {
     return {
       ...pgResult.rows[0],
       name: mongoUser.name,
-      password_hash: pgResult.rows[0].password_hash // Явно добавляем password_hash
+      password_hash: pgResult.rows[0].password_hash, // Явно добавляем password_hash
     };
   } catch (error) {
     console.error('Error in findUserByEmail:', error);
@@ -104,30 +99,28 @@ export const getUserById = async (id) => {
     throw new Error('MongoDB connection is not established');
   }
 
-
   // 1. Получаем базовые данные из PostgreSQL
   const pgResult = await pool.query(
     `SELECT id, email, guid FROM users WHERE id = $1`,
     [id]
   );
-  
+
   if (!pgResult.rows.length) return null;
 
-// 2. MongoDB данные (с обработкой ошибок)
-try {
-  const mongoUser = await mongoose.connection.db
-    .collection('users')
-    .findOne({ postgresId: id });
+  // 2. MongoDB данные (с обработкой ошибок)
+  try {
+    const mongoUser = await mongoose.connection.db
+      .collection('users')
+      .findOne({ postgresId: id });
 
-  return {
-    ...pgResult.rows[0],
-    name: mongoUser?.name || ''
-  };
-} catch (mongoError) {
-  console.error('MongoDB query failed:', mongoError);
-  return { ...pgResult.rows[0], name: '' }; // Возвращаем хотя бы PostgreSQL данные
-}
-
+    return {
+      ...pgResult.rows[0],
+      name: mongoUser?.name || '',
+    };
+  } catch (mongoError) {
+    console.error('MongoDB query failed:', mongoError);
+    return { ...pgResult.rows[0], name: '' }; // Возвращаем хотя бы PostgreSQL данные
+  }
 };
 
 export const updateUser = async (id, fields) => {

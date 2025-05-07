@@ -1,9 +1,8 @@
-
 /* для MongoDB */
 
 import express from 'express';
-import { authenticate } from '../middleware/auth.js';
-import { getProfile, updateProfile } from '../controllers/profile.js';
+import { authenticate } from '../2_middleware/auth.js';
+import { getProfile, updateProfile } from '../3_controllers/profile.js';
 
 const router = express.Router();
 

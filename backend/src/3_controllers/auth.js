@@ -1,10 +1,10 @@
 import bcrypt from 'bcryptjs';
-import { pool } from '../config/db_pg.js';
-import { createUser, findUserByEmail } from '../models/user.js';
+import { createUser, findUserByEmail } from '../4_db_services/models/user.js';
 import { generateTokens } from '../utils/jwt.js';
+import { mng_connection } from '../4_db_services/db_config/db_mng.js';
+import { pg_connection } from '../4_db_services/db_config/db_pg.js';
 
 // ФУНКЦИЯ РЕГИСТРАЦИИ ПОЛЬЗОВАТЕЛЯ
-
 
 export const register = async (req, res) => {
   let user;
@@ -47,7 +47,7 @@ export const register = async (req, res) => {
     } catch (tokenError) {
       console.error('Ошибка генерации токена:', tokenError);
       // Откат создания пользователя при ошибке
-      await pool.query('DELETE FROM users WHERE id = $1', [user.id]);
+      await pg_connection.query('DELETE FROM users WHERE id = $1', [user.id]);
       return res.status(500).json({
         success: false,
         message: 'Ошибка при создании сессии',
@@ -71,7 +71,7 @@ export const register = async (req, res) => {
     // Откат при других ошибках
     if (user?.id) {
       try {
-        await pool.query('DELETE FROM users WHERE id = $1', [user.id]);
+        await pg_connection.query('DELETE FROM users WHERE id = $1', [user.id]);
       } catch (deleteError) {
         console.error('Ошибка при откате создания пользователя:', deleteError);
       }
@@ -84,7 +84,6 @@ export const register = async (req, res) => {
     });
   }
 };
-
 
 /* Рекомендации для дальнейшей разработки:
     
@@ -102,12 +101,11 @@ export const register = async (req, res) => {
           Создайте middleware для проверки токена
 */
 
-
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     console.log('Login attempt for email:', email); // Логирование
-    
+
     const user = await findUserByEmail(email);
     console.log('Found user:', user); // Логирование найденного пользователя
 
@@ -129,7 +127,7 @@ export const login = async (req, res) => {
 
     console.log('Comparing password with hash:', user.password_hash);
     const isMatch = await bcrypt.compare(password, user.password_hash);
-    
+
     if (!isMatch) {
       console.log('Password mismatch for user:', user.id);
       return res.status(400).json({
@@ -159,11 +157,10 @@ export const login = async (req, res) => {
   }
 };
 
-
 export const refreshToken = async (req, res) => {
   try {
     const { refreshToken } = req.body;
-    
+
     if (!refreshToken) {
       return res.status(400).json({ message: 'Refresh token отсутствует' });
     }
@@ -175,9 +172,9 @@ export const refreshToken = async (req, res) => {
       { expiresIn: '15m' } // Новый токен на 15 минут
     );
 
-    res.json({ 
+    res.json({
       token: newAccessToken,
-      expiresIn: 15 * 60 * 1000 // Время жизни в миллисекундах
+      expiresIn: 15 * 60 * 1000, // Время жизни в миллисекундах
     });
   } catch (error) {
     console.error('Refresh token error:', error);

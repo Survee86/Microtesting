@@ -1,11 +1,13 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import authRoutes from './routes/auth.js';
-import userRoutes from './routes/user.js';
-import profileRoutes from './routes/profile.js';
-import { connectToDatabase } from './config/db_mng.js';
+import express  from 'express';
+import dotenv   from 'dotenv';
+
+/* import authRoutes     from './routes/auth.js';
+import userRoutes     from './routes/user.js';
+import profileRoutes  from './routes/profile.js'; */
+
 import cors from "cors";
-import mongoose from 'mongoose';
+import { mng_connection } from './4_db_services/db_config/db_mng.js';
+import { pg_connection  } from './4_db_services/db_config/db_pg.js';
 
 dotenv.config();
 
@@ -20,38 +22,59 @@ app.use (cors   ({
                 })
         )
 
-       
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
-
 // Подключение роутов
-app.use('/api/auth',    authRoutes);
+/* app.use('/api/auth',    authRoutes);
 app.use('/api/user',    userRoutes);
-app.use('/api/profile', profileRoutes);
+app.use('/api/profile', profileRoutes); */
 
+// Функция для проверки подключений
+async function checkDatabaseConnections() {
+  try {
+    // Проверка MongoDB
+    try {
+      const { db } = await mng_connection();
+      await db.command({ ping: 1 });
+      console.log('MongoDB connection check: OK');
+    } catch (mongoError) {
+      console.error('app.js / checkDatabaseConnections() - ошибка проверки подключения к MongoDB:', mongoError.message);
+    }
 
-// Подключение к MONGODB
-
-async function main() {
-  await connectToDatabase(); // PostgreSQL
-  await mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000 // Таймаут 5 секунд
-  });
-  console.log('MongoDB connected');
+    // Проверка PostgreSQL
+    try {
+      const client = await pg_connection.connect();
+      await client.query('SELECT NOW()');
+      client.release();
+      console.log('PostgreSQL connection check: OK');
+    } catch (pgError) {
+      console.error('PostgreSQL connection check failed:', pgError.message);
+    }
+  } catch (error) {
+    console.error('Database check error:', error);
+  }
 }
 
-mongoose.connection.on('error', err => {
-  console.error('MongoDB connection error:', err);
-});
+// Запуск периодической проверки (каждые 5 минут)
+function startDatabaseHealthChecks(intervalMinutes = 5) {
+  const intervalMs = intervalMinutes * 60 * 1000;
+  
+  // Первая проверка сразу при старте
+  checkDatabaseConnections();
+  
+  // Периодические проверки
+  const intervalId = setInterval(checkDatabaseConnections, intervalMs);
+  
+  // Остановка проверки при завершении приложения
+  process.on('SIGINT', () => {
+    clearInterval(intervalId);
+    process.exit(0);
+  });
+}
 
-mongoose.connection.on('disconnected', () => {
-  console.warn('MongoDB disconnected');
-});
+// Запуск периодических проверок
+startDatabaseHealthChecks();
 
 
 
