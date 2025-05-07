@@ -1,37 +1,77 @@
-import { MongoClient }  from 'mongodb';      // Импорт класса MongoClient из библиотеки mongodb для работы с MongoDB
-import dotenv           from 'dotenv';       // Импорт пакета dotenv для загрузки переменных окружения из файла .env
+import { MongoClient } from 'mongodb';
+import dotenv from 'dotenv';
 
+dotenv.config();
+const uri = process.env.MONGODB_URI;
 
-dotenv.config();                            // Загружаем переменные окружения из файла .env в process.env
-const uri = process.env.MONGODB_URI;        // Получаем строку подключения к MongoDB из переменных окружения
-
-// Проверяем, что строка подключения определена, иначе выбрасываем ошибку
 if (!uri) {
   throw new Error('Please define the MONGODB_URI environment variable');
 }
 
-const client = new MongoClient(uri, { 
-  appName: 'survee',
+export const client = new MongoClient(uri, { 
+  appName: 'multi-db-connector',
   serverApi: { version: '1', strict: true, deprecationErrors: true }
 });
 
-export async function survee_connection() {
-
+/**
+ * Универсальная функция подключения к MongoDB
+ * @param {string} dbName - Название базы данных
+ * @param {string[]} collectionNames - Массив названий коллекций
+ * @returns {Promise<{db: Db, collections: {[key: string]: Collection}}>}
+ */
+export async function mongo_connection(dbName, collectionNames = []) {
   try {
-    // Подключаемся, если еще не подключены
-    if  (!client.topology || !client.topology.isConnected()) 
-        {await client.connect();}
+    if (!client.topology?.isConnected()) {
+      await client.connect();
+    }
     
-    const survee_db           = client.db('survee');
-    const usersCollection     = survee_db.collection('users');
-    const profilesCollection  = survee_db.collection('profiles');
+    const db = client.db(dbName);
+    const collections = {};
     
-    console.log('✅ MongoDB connection is active');
+    for (const name of collectionNames) {
+      collections[name] = db.collection(name);
+    }
     
-    return { survee_db, usersCollection, profilesCollection };
+    console.log(`✅ MongoDB connection to database "${dbName}" is active`);
+    
+    return { db, collections };
   } catch (error) {
-    console.error('❌ MongoDB connection failed:', error);
-    throw error; // Пробрасываем ошибку для обработки на уровне выше
+    console.error(`❌ MongoDB connection to "${dbName}" failed:`, error);
+    throw error;
   }
+}
 
+
+/* Использование функции проверки подключения к mongo в других файлах:
+    
+      import { checkMongoConnection } from './db_mng.js';
+
+      const isConnected = await checkMongoConnection();
+
+      if  (!isConnected) 
+          {
+            // Действия при отсутствии подключения
+          } 
+*/
+
+export async function checkMongoConnection() {
+  try {
+    if (!client.topology?.isConnected()) {
+      await client.connect();
+    }
+    
+    // Проверяем подключение через ping
+    await client.db().admin().command({ ping: 1 });
+    console.log('✅ MongoDB server is available');
+    return true;
+  } catch (error) {
+    console.error('❌ MongoDB connection check failed:', error.message);
+    return false;
+  }
+}
+
+
+// Специфичное подключение для базы survee (для обратной совместимости)
+export async function survee_connection() {
+  return mongo_connection('survee', ['users', 'profiles']);
 }
