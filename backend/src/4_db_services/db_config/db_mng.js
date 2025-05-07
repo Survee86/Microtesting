@@ -10,17 +10,11 @@ if (!uri) {
   throw new Error('Please define the MONGODB_URI environment variable');
 }
 
-// Создаем новый экземпляр MongoClient с указанием:
-// - uri - строки подключения
-// - объекта настроек, где:
-//   - appName: имя приложения для мониторинга в MongoDB
-//   - serverApi: настройки Stable API для совместимости версий
 const client = new MongoClient(uri, { 
   appName: 'survee',
   serverApi: { version: '1', strict: true, deprecationErrors: true }
 });
 
-// Экспортируемая асинхронная функция для подключения к БД
 export async function survee_connection() {
 
   try {
@@ -32,11 +26,11 @@ export async function survee_connection() {
     const usersCollection     = survee_db.collection('users');
     const profilesCollection  = survee_db.collection('profiles');
     
-    console.log('MongoDB connection is active');
+    console.log('✅ MongoDB connection is active');
     
     return { survee_db, usersCollection, profilesCollection };
   } catch (error) {
-    console.error('MongoDB connection failed:', error);
+    console.error('❌ MongoDB connection failed:', error);
     throw error; // Пробрасываем ошибку для обработки на уровне выше
   }
 

@@ -38,9 +38,9 @@ async function checkDatabaseConnections() {
     try {
       const { survee_db } = await survee_connection();
       await survee_db.command({ ping: 1 });
-      console.log('app.js / checkDatabaseConnections() - MongoDB connection check: OK');
+      console.log('✅ app.js / checkDatabaseConnections() - MongoDB connection check: OK');
     } catch (mongoError) {
-      console.error('app.js / checkDatabaseConnections() - ошибка проверки подключения к MongoDB:', mongoError.message);
+      console.error('❌ app.js / checkDatabaseConnections() - ошибка проверки подключения к MongoDB:', mongoError.message);
     }
 
     // Проверка PostgreSQL
@@ -48,12 +48,12 @@ async function checkDatabaseConnections() {
       const client = await pg_connection.connect();
       await client.query('SELECT NOW()');
       client.release();
-      console.log('app.js / checkDatabaseConnections() - PostgreSQL connection check: OK');
+      console.log('✅ app.js / checkDatabaseConnections() - PostgreSQL connection check: OK');
     } catch (pgError) {
-      console.error('app.js / checkDatabaseConnections() - PostgreSQL connection check failed:', pgError.message);
+      console.error('❌ app.js / checkDatabaseConnections() - PostgreSQL connection check failed:', pgError.message);
     }
   } catch (error) {
-    console.error('app.js / checkDatabaseConnections() - ошибка в функции: ', error);
+    console.error('❌ app.js / checkDatabaseConnections() - ошибка в функции: ', error);
   }
 }
 
