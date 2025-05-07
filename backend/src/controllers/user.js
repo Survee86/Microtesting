@@ -1,30 +1,27 @@
 import { getUserById, updateUser } from '../models/user.js';
+import Profile from '../models/profile.js'; // Добавьте в начало файла
+
 
 export const getCurrentUser = async (req, res) => {
   try {
-    // 1. Получаем основную информацию
     const user = await getUserById(req.user.userId);
     
-    // 2. Получаем профиль из MongoDB
-    const profile = await Profile.findOne({ userId: req.user.userId });
+    // Добавляем проверку на подключение MongoDB
+    let profile = {};
+    if (mongoose.connection.readyState === 1) {
+      profile = await Profile.findOne({ userId: req.user.userId }).lean() || {};
+    }
 
     res.json({
       id: user.id,
       email: user.email,
-      firstName: profile?.firstName || '', // Из профиля
-      lastName: profile?.lastName || '',   // Из профиля
-      // Другие поля...
+      firstName: profile.firstName || '',
+      lastName: profile.lastName || '',
+      name: user.name // Из PostgreSQL/MongoDB users
     });
-    
   } catch (error) {
-    console.error('Get user error:', error);
-    res.status(500).json({ 
-      message: 'Server error',
-      ...(process.env.NODE_ENV === 'development' && { 
-        error: error.message,
-        stack: error.stack
-      })
-    });
+    console.error('Error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 

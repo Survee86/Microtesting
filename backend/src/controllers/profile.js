@@ -4,7 +4,7 @@ export const getProfile = async (req, res) => {
   try {
     console.log('Fetching profile for user ID:', req.user.userId);
     
-    const profile = await Profile.findOne({ userId: req.user.userId })
+    const profile = await Profile.findOne({ userId: Number(req.user.userId) })
       .lean()
       .exec();
     
@@ -30,7 +30,7 @@ export const getProfile = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const profile = await Profile.findOneAndUpdate(
-      { userId: req.user.userId },
+      { userId: Number(req.user.userId) },
       { $set: req.body },
       { new: true, upsert: true }
     );

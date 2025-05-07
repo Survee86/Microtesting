@@ -99,6 +99,12 @@ export const findUserByEmail = async (email) => {
 };
 
 export const getUserById = async (id) => {
+  // Проверяем подключение к MongoDB
+  if (!mongoose.connection?.db) {
+    throw new Error('MongoDB connection is not established');
+  }
+
+
   // 1. Получаем базовые данные из PostgreSQL
   const pgResult = await pool.query(
     `SELECT id, email, guid FROM users WHERE id = $1`,
@@ -107,18 +113,21 @@ export const getUserById = async (id) => {
   
   if (!pgResult.rows.length) return null;
 
-  // 2. Получаем профиль из MongoDB
+// 2. MongoDB данные (с обработкой ошибок)
+try {
   const mongoUser = await mongoose.connection.db
     .collection('users')
     .findOne({ postgresId: id });
 
-  // 3. Возвращаем объединённые данные
   return {
-    id: pgResult.rows[0].id,
-    email: pgResult.rows[0].email,
-    name: mongoUser?.name || '', // Берём имя из MongoDB
-    // Остальные поля должны браться из профиля (MongoDB)
+    ...pgResult.rows[0],
+    name: mongoUser?.name || ''
   };
+} catch (mongoError) {
+  console.error('MongoDB query failed:', mongoError);
+  return { ...pgResult.rows[0], name: '' }; // Возвращаем хотя бы PostgreSQL данные
+}
+
 };
 
 export const updateUser = async (id, fields) => {

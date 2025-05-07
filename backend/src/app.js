@@ -5,6 +5,7 @@ import userRoutes from './routes/user.js';
 import profileRoutes from './routes/profile.js';
 import { connectToDatabase } from './config/db_mng.js';
 import cors from "cors";
+import mongoose from 'mongoose';
 
 dotenv.config();
 
@@ -35,11 +36,22 @@ app.use('/api/profile', profileRoutes);
 // Подключение к MONGODB
 
 async function main() {
-  await connectToDatabase();
-  // ваш остальной код
+  await connectToDatabase(); // PostgreSQL
+  await mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000 // Таймаут 5 секунд
+  });
+  console.log('MongoDB connected');
 }
 
-main().catch(console.error);
+mongoose.connection.on('error', err => {
+  console.error('MongoDB connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.warn('MongoDB disconnected');
+});
 
 
 
