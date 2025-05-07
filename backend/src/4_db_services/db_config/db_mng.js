@@ -29,7 +29,7 @@ let profilesCollection;  // коллекции профилей (задач)
 // Экспортируемая асинхронная функция для подключения к БД
 export async function mng_connection() {
   // Если подключение уже установлено, возвращаем существующие ссылки
-  if (db) return { db, usersCollection, tasksCollection };
+  if (survee_db) return { survee_db, usersCollection, tasksCollection };
   
   try {
     // Устанавливаем подключение к серверу MongoDB
