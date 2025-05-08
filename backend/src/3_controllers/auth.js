@@ -1,92 +1,66 @@
 import bcrypt from 'bcryptjs';
 import { createUser, findUserByEmail } from '../4_db_services/models/user.js';
 import { generateTokens } from '../utils/jwt.js';
-import { mng_connection } from '../4_db_services/db_config/db_mng.js';
-import { pg_connection } from '../4_db_services/db_config/db_pg.js';
 
 // ФУНКЦИЯ РЕГИСТРАЦИИ ПОЛЬЗОВАТЕЛЯ
 
 export const register = async (req, res) => {
-  let user;
   try {
     const { email, password, name } = req.body;
+    
+    // Параллельное выполнение хеширования и генерации соли
+    const [salt, userExists] = await Promise.all([
+      bcrypt.genSalt(10),
+      findUserByEmail(email) // Дополнительная проверка для безопасности
+    ]);
 
-    // Валидация входных данных
-    if (!email || !password || !name) {
-      return res.status(400).json({
-        success: false,
-        message: 'Все поля обязательны для заполнения',
-      });
-    }
-
-    // Проверка существования пользователя
-    const existingUser = await findUserByEmail(email);
-    if (existingUser) {
+    if (userExists) {
       return res.status(400).json({
         success: false,
         message: 'Пользователь с таким email уже существует',
       });
     }
 
-    // Хеширование пароля
-    const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Создание пользователя
-    // В функции register
-    user = await createUser({
-      email,
-      password: hashedPassword,
-      name, // Убедитесь, что name передается
-    });
-
-    // Генерация токенов с автоматическим сроком действия (из jwt.js)
-    let tokens;
+    
+    // Создаем пользователя и генерируем токены в одной транзакции
+    const result = await pg_connection.query('BEGIN');
     try {
-      tokens = generateTokens({ userId: user.id });
-    } catch (tokenError) {
-      console.error('Ошибка генерации токена:', tokenError);
-      // Откат создания пользователя при ошибке
-      await pg_connection.query('DELETE FROM users WHERE id = $1', [user.id]);
-      return res.status(500).json({
-        success: false,
-        message: 'Ошибка при создании сессии',
+      const user = await createUser({ email, password: hashedPassword, name });
+      const tokens = generateTokens({ userId: user.id });
+      
+      await pg_connection.query('COMMIT');
+      
+      return res.status(201).json({
+        success: true,
+        message: 'Регистрация успешна',
+        token: tokens.accessToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+        },
       });
+    } catch (error) {
+      await pg_connection.query('ROLLBACK');
+      throw error;
     }
-
-    // Успешный ответ с accessToken
-    return res.status(201).json({
-      success: true,
-      message: 'Регистрация успешна',
-      token: tokens.accessToken, // Теперь tokens содержит { accessToken }
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-      },
-    });
   } catch (error) {
     console.error('Ошибка регистрации:', error);
+    
+    const errorMessage = error.code === '23505' // Код ошибки дубликата в PostgreSQL
+      ? 'Пользователь с таким email уже существует'
+      : 'Произошла ошибка при регистрации';
 
-    // Откат при других ошибках
-    if (user?.id) {
-      try {
-        await pg_connection.query('DELETE FROM users WHERE id = $1', [user.id]);
-      } catch (deleteError) {
-        console.error('Ошибка при откате создания пользователя:', deleteError);
-      }
-    }
-
-    return res.status(500).json({
+    return res.status(error.statusCode || 500).json({
       success: false,
-      message: 'Произошла ошибка при регистрации',
+      message: errorMessage,
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 };
 
 /* Рекомендации для дальнейшей разработки:
-    
     
     1. Добавьте валидацию пароля при регистрации
           Минимальная длина (например, 8 символов)
@@ -99,6 +73,10 @@ export const register = async (req, res) => {
           Используйте express-rate-limit
     4. Добавьте JWT-проверку в защищённые роуты
           Создайте middleware для проверки токена
+    5. Можно вынести генерацию токенов в отдельный сервис
+    6. Для работы с транзакциями можно создать вспомогательную функцию-обертку
+    7. Можно добавить кэширование результатов проверки существования пользователя
+    8. Для хеширования пароля можно подобрать оптимальное количество раундов (10 - хорошее значение по умолчанию)          
 */
 
 export const login = async (req, res) => {

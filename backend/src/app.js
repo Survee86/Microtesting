@@ -2,8 +2,10 @@ import express  from 'express';
 import dotenv   from 'dotenv';
 import { checkMongoConnection, initializeMongoDB } from './4_db_services/db_check/mng_check/mng_check.js';
 
-/* 
-import authRoutes     from './routes/auth.js';
+ 
+import authRoutes     from './1_routes/auth.js'
+
+/*
 import userRoutes     from './routes/user.js';
 import profileRoutes  from './routes/profile.js'; 
 */
@@ -30,8 +32,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // Подключение роутов
 
-/* 
+
 app.use('/api/auth',    authRoutes);
+
+/* 
 app.use('/api/user',    userRoutes);
 app.use('/api/profile', profileRoutes); 
 */
