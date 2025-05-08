@@ -38,9 +38,9 @@ const Register = () => {
       const response = await axios.post(
         'http://localhost:3001/api/auth/register',
         {
-          firstName : values.name,
-          email:      values.email,
-          password:   values.password
+          firstName: values.name,
+          email: values.email,
+          password: values.password
         },
         {
           headers: {
@@ -110,6 +110,9 @@ const Register = () => {
           onBlur={formik.handleBlur}
           error={formik.touched.name && Boolean(formik.errors.name)}
           helperText={formik.touched.name && formik.errors.name}
+          inputProps={{
+            autoComplete: "name"  // Для поля имени
+          }}
         />
 
         <TextField
@@ -123,6 +126,9 @@ const Register = () => {
           onBlur={formik.handleBlur}
           error={formik.touched.email && Boolean(formik.errors.email)}
           helperText={formik.touched.email && formik.errors.email}
+          inputProps={{
+            autoComplete: "email"  // Для поля email
+          }}
         />
 
         <TextField
@@ -136,6 +142,9 @@ const Register = () => {
           onBlur={formik.handleBlur}
           error={formik.touched.password && Boolean(formik.errors.password)}
           helperText={formik.touched.password && formik.errors.password}
+          inputProps={{
+            autoComplete: "new-password"  // Для нового пароля
+          }}
         />
 
         <TextField
@@ -149,6 +158,9 @@ const Register = () => {
           onBlur={formik.handleBlur}
           error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
           helperText={formik.touched.confirmPassword && formik.errors.confirmPassword}
+          inputProps={{
+            autoComplete: "new-password"  // Для подтверждения пароля
+          }}
         />
 
         <Button
