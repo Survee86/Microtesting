@@ -18,7 +18,7 @@ const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validationSchema = Yup.object({
-    name: Yup.string().required('Обязательное поле'),
+    firstName: Yup.string().required('Обязательное поле'),
     email: Yup.string()
       .email('Некорректный email')
       .required('Обязательное поле'),
@@ -38,7 +38,7 @@ const Register = () => {
       const response = await axios.post(
         'http://localhost:3001/api/auth/register',
         {
-          firstName: values.name,
+          firstName: values.firstName,
           email: values.email,
           password: values.password
         },
@@ -71,7 +71,7 @@ const Register = () => {
 
   const formik = useFormik({
     initialValues: {
-      name: '',
+      firstName: '',
       email: '',
       password: '',
       confirmPassword: ''
@@ -104,14 +104,14 @@ const Register = () => {
           fullWidth
           margin="normal"
           label="Имя"
-          name="name"
-          value={formik.values.name}
+          name="firstName"
+          value={formik.values.firstName}
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
-          error={formik.touched.name && Boolean(formik.errors.name)}
-          helperText={formik.touched.name && formik.errors.name}
+          error={formik.touched.firstName && Boolean(formik.errors.firstName)}
+          helperText={formik.touched.firstName && formik.errors.firstName}
           inputProps={{
-            autoComplete: "name"  // Для поля имени
+            autoComplete: "firstName"  // Для поля имени
           }}
         />
 
