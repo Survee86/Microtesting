@@ -41,8 +41,7 @@ const validateUserData = (userData) => {
 export const createUser = async (userData) => {
   try {
     validateUserData(userData);
-    checkMongoConnection();
-
+    
     const { email, password, firstName  } = userData;
     const guid = uuidv4();
     const pgClient = await pg_connection.connect();
@@ -65,7 +64,7 @@ export const createUser = async (userData) => {
         guid: user.guid,
         postgresId: user.id,
         email: user.email,
-        firstName: '', // Инициализируем поля профиля
+        firstName: firstName,
         lastName: '',
         birthDate: null,
         createdAt: user.created_at,
