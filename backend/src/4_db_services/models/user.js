@@ -23,7 +23,7 @@ const validateUserData = (userData) => {
     throw new Error('Invalid user data: expected object');
   }
 
-  const { email, password, name } = userData;
+  const { email, password, firstName  } = userData;
   
   if (!email || typeof email !== 'string') {
     throw new Error('Invalid email: must be a non-empty string');
@@ -33,8 +33,8 @@ const validateUserData = (userData) => {
     throw new Error('Invalid password: must be a non-empty string');
   }
   
-  if (!name || typeof name !== 'string') {
-    throw new Error('Invalid name: must be a non-empty string');
+  if (!firstName  || typeof firstName  !== 'string') {
+    throw new Error('Invalid firstName : must be a non-empty string');
   }
 };
 
@@ -43,7 +43,7 @@ export const createUser = async (userData) => {
     validateUserData(userData);
     checkMongoConnection();
 
-    const { email, password, name } = userData;
+    const { email, password, firstName  } = userData;
     const guid = uuidv4();
     const pgClient = await pg_connection.connect();
     
@@ -68,7 +68,6 @@ export const createUser = async (userData) => {
         firstName: '', // Инициализируем поля профиля
         lastName: '',
         birthDate: null,
-        name: name, // Для обратной совместимости
         createdAt: user.created_at,
         updatedAt: new Date()
       };
@@ -95,7 +94,7 @@ export const createUser = async (userData) => {
         id: user.id,
         guid: user.guid,
         email: user.email,
-        name: name,
+        firstName : firstName ,
         createdAt: user.created_at
       };
 
@@ -150,7 +149,6 @@ export const findUserByEmail = async (email) => {
       firstName: mongoUser.firstName || '',
       lastName: mongoUser.lastName || '',
       birthDate: mongoUser.birthDate || null,
-      name: mongoUser.name || '', // Для обратной совместимости
       updatedAt: mongoUser.updatedAt
     };
   } catch (error) {
@@ -186,7 +184,6 @@ export const getUserById = async (id) => {
           firstName: 1,
           lastName: 1,
           birthDate: 1,
-          name: 1,
           updatedAt: 1
         }
       }
@@ -197,7 +194,6 @@ export const getUserById = async (id) => {
       firstName: mongoUser?.firstName || '',
       lastName: mongoUser?.lastName || '',
       birthDate: mongoUser?.birthDate || null,
-      name: mongoUser?.name || '', // Для обратной совместимости
       updatedAt: mongoUser?.updatedAt || null
     };
   } catch (error) {
@@ -245,9 +241,6 @@ export const updateUser = async (id, updateData) => {
     }
     if (updateData.birthDate !== undefined) {
       mongoUpdates.birthDate = updateData.birthDate;
-    }
-    if (updateData.name !== undefined) { // Для обратной совместимости
-      mongoUpdates.name = updateData.name;
     }
 
     // 2. Выполнение обновлений

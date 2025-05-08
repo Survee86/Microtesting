@@ -10,7 +10,7 @@ export const register = async (req, res) => {
   const client = await pg_connection.connect(); // Получаем клиента из пула
   
   try {
-    const { email, password, name } = req.body;
+    const { email, password, firstName  } = req.body;
     
     // Проверка существования пользователя
     const userExists = await findUserByEmail(email);
@@ -29,7 +29,7 @@ export const register = async (req, res) => {
     await client.query('BEGIN');
 
     // Создание пользователя
-    user = await createUser({ email, password: hashedPassword, name });
+    user = await createUser({ email, password: hashedPassword, firstName });
     
     // Генерация токенов
     const tokens = generateTokens({ userId: user.id });
@@ -43,7 +43,7 @@ export const register = async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name,
+        firstName : user.firstName ,
       },
     });
   } catch (error) {
@@ -136,7 +136,7 @@ export const login = async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name,
+        firstName : user.firstName ,
       },
     });
   } catch (error) {
