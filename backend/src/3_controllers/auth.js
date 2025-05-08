@@ -1,19 +1,19 @@
 import bcrypt from 'bcryptjs';
 import { createUser, findUserByEmail } from '../4_db_services/models/user.js';
 import { generateTokens } from '../utils/jwt.js';
+import { pg_connection } from '../4_db_services/db_config/db_pg.js'
 
 // ФУНКЦИЯ РЕГИСТРАЦИИ ПОЛЬЗОВАТЕЛЯ
 
 export const register = async (req, res) => {
+  let user;
+  const client = await pg_connection.connect(); // Получаем клиента из пула
+  
   try {
     const { email, password, name } = req.body;
     
-    // Параллельное выполнение хеширования и генерации соли
-    const [salt, userExists] = await Promise.all([
-      bcrypt.genSalt(10),
-      findUserByEmail(email) // Дополнительная проверка для безопасности
-    ]);
-
+    // Проверка существования пользователя
+    const userExists = await findUserByEmail(email);
     if (userExists) {
       return res.status(400).json({
         success: false,
@@ -21,31 +21,39 @@ export const register = async (req, res) => {
       });
     }
 
+    // Хеширование пароля
+    const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Начинаем транзакцию
+    await client.query('BEGIN');
+
+    // Создание пользователя
+    user = await createUser({ email, password: hashedPassword, name });
     
-    // Создаем пользователя и генерируем токены в одной транзакции
-    const result = await pg_connection.query('BEGIN');
-    try {
-      const user = await createUser({ email, password: hashedPassword, name });
-      const tokens = generateTokens({ userId: user.id });
-      
-      await pg_connection.query('COMMIT');
-      
-      return res.status(201).json({
-        success: true,
-        message: 'Регистрация успешна',
-        token: tokens.accessToken,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        },
-      });
-    } catch (error) {
-      await pg_connection.query('ROLLBACK');
-      throw error;
-    }
+    // Генерация токенов
+    const tokens = generateTokens({ userId: user.id });
+    
+    await client.query('COMMIT');
+    
+    return res.status(201).json({
+      success: true,
+      message: 'Регистрация успешна',
+      token: tokens.accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
+    });
   } catch (error) {
+    // Откатываем транзакцию при ошибке
+    if (client) {
+      await client.query('ROLLBACK').catch(rollbackError => {
+        console.error('Ошибка при откате транзакции:', rollbackError);
+      });
+    }
+
     console.error('Ошибка регистрации:', error);
     
     const errorMessage = error.code === '23505' // Код ошибки дубликата в PostgreSQL
@@ -57,6 +65,11 @@ export const register = async (req, res) => {
       message: errorMessage,
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
+  } finally {
+    // Всегда освобождаем клиента
+    if (client) {
+      client.release();
+    }
   }
 };
 

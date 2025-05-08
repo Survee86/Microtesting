@@ -1,31 +1,42 @@
+/* 
+=================================
+ИМПОРТЫ
+================================= 
+*/
+
 import express  from 'express';
 import dotenv   from 'dotenv';
 import { checkMongoConnection, initializeMongoDB } from './4_db_services/db_check/mng_check/mng_check.js';
 
  
 import authRoutes     from './1_routes/auth.js'
-
-/*
 import userRoutes     from './routes/user.js';
 import profileRoutes  from './routes/profile.js'; 
-*/
+
 
 import cors from "cors";
-import { survee_connection } from './4_db_services/db_config/db_mng.js';
-import { pg_connection     } from './4_db_services/db_config/db_pg.js';
+
+
+/* 
+=================================
+APP USE
+================================= 
+*/
+
+
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use (cors   ({
+app.use /* ПОдключение CORS */ 
+        (cors   ({
                       origin: 'http://localhost:5173', // Укажите здесь адрес вашего фронтенда
                       credentials: true, // Если вы используете куки или аутентификацию
                       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // Разрешенные методы
                       allowedHeaders: ['Content-Type', 'Authorization'] // Разрешенные заголовки
-                })
-        )
+                }))
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -34,17 +45,15 @@ app.use(express.urlencoded({ extended: true }));
 
 
 app.use('/api/auth',    authRoutes);
-
-/* 
 app.use('/api/user',    userRoutes);
 app.use('/api/profile', profileRoutes); 
+
+
+/* 
+=================================
+ЗАПУСК ПРИЛОЖЕНИЯ
+================================= 
 */
-
-
-
-
-
-// Запуск приложения
 
 // Запуск приложения
 app.listen(PORT, async () => {
