@@ -94,7 +94,7 @@ export const createUser = async (userData) => {
         id: user.id,
         guid: user.guid,
         email: user.email,
-        firstName : firstName ,
+        firstName : firstName,
         createdAt: user.created_at
       };
 

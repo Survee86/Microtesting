@@ -2,10 +2,10 @@ import { findUserByEmail } from '../../4_db_services/models/user.js';
 
 export const validateRegForm = async (req, res, next) => {
   try {
-    const { email, password, firstName  } = req.body;
+    const { email, password, firstName } = req.body;
 
     // 1. Проверка наличия всех полей
-    if (!email || !password || !firstName ) {
+    if (!email || !password || !firstName) {
       return res.status(400).json({
         success: false,
         message: 'Все поля обязательны для заполнения',
