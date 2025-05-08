@@ -10,8 +10,8 @@ import { checkMongoConnection, initializeMongoDB } from './4_db_services/db_chec
 
  
 import authRoutes     from './1_routes/auth.js'
-import userRoutes     from './routes/user.js';
-import profileRoutes  from './routes/profile.js'; 
+import userRoutes     from './1_routes/user.js';
+import profileRoutes  from './1_routes/profile.js';
 
 
 import cors from "cors";
