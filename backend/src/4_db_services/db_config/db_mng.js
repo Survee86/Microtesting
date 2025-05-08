@@ -13,12 +13,13 @@ export const client = new MongoClient(uri, {
   serverApi: { version: '1', strict: true, deprecationErrors: true }
 });
 
-/**
- * Универсальная функция подключения к MongoDB
+/** * Универсальная функция подключения к MongoDB
+ 
  * @param {string} dbName - Название базы данных
  * @param {string[]} collectionNames - Массив названий коллекций
  * @returns {Promise<{db: Db, collections: {[key: string]: Collection}}>}
  */
+
 export async function mongo_connection(dbName, collectionNames = []) {
   try {
     if (!client.topology?.isConnected()) {
@@ -38,35 +39,6 @@ export async function mongo_connection(dbName, collectionNames = []) {
   } catch (error) {
     console.error(`❌ MongoDB connection to "${dbName}" failed:`, error);
     throw error;
-  }
-}
-
-
-/* Использование функции проверки подключения к mongo в других файлах:
-    
-      import { checkMongoConnection } from './db_mng.js';
-
-      const isConnected = await checkMongoConnection();
-
-      if  (!isConnected) 
-          {
-            // Действия при отсутствии подключения
-          } 
-*/
-
-export async function checkMongoConnection() {
-  try {
-    if (!client.topology?.isConnected()) {
-      await client.connect();
-    }
-    
-    // Проверяем подключение через ping
-    await client.db().admin().command({ ping: 1 });
-    console.log('✅ MongoDB server is available');
-    return true;
-  } catch (error) {
-    console.error('❌ MongoDB connection check failed:', error.message);
-    return false;
   }
 }
 

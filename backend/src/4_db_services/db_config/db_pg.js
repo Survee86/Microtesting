@@ -6,7 +6,7 @@ dotenv.config();
 const requiredEnvVars = ['DB_USER', 'DB_HOST', 'DB_NAME', 'DB_PASSWORD', 'DB_PORT'];
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
-    throw new Error(`❌ Отсутствуют переменные подключения в файле .env: ${envVar}`);
+    throw new Error(`❌ db_config/db_pg.js / Отсутствуют переменные подключения в файле .env: ${envVar}`);
   }
 }
 
@@ -24,6 +24,6 @@ export const pg_connection = new Pool({
 
 // Проверка подключения PostgreSQL
 pg_connection.query('SELECT NOW()', (err) => {
-  if (err)  console.error('❌ PostgreSQL connection error', err.stack);
-  else      console.log('✅ PostgreSQL connected successfully');
+  if (err)  console.error('❌ db_config/db_pg.js / PostgreSQL connection error', err.stack);
+  else      console.log('✅ db_config/db_pg.js / PostgreSQL connected successfully');
 });

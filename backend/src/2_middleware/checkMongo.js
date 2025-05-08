@@ -1,28 +1,33 @@
-import mongoose from 'mongoose';
+import { checkMongoConnection } from '../4_db_services/db_check/mng_check/mng_check.js'
 
-export const checkMongo = async (req, res, next) => {
-    try {
-        // Если нет подключения, пытаемся переподключиться
-        if (mongoose.connection.readyState !== 1) {
-          await mongoose.connect(process.env.MONGODB_URI, {
-            serverSelectionTimeoutMS: 5000 // Таймаут 5 секунд
-          });
-        }
-        
-        // Проверяем после попытки подключения
-        if (mongoose.connection.readyState === 1) {
-          return next();
-        }
-        
-        throw new Error('Не удалось установить подключение к базе данных');
-        
-      } catch (error) {
-        console.error('Ошибка подключения к MongoDB:', error);
-        
-        res.status(503).json({
-          success: false,
-          message: 'Сервис временно недоступен. Проблемы с подключением к базе данных',
-          error: error.message
-        });
-      }
-    };
+
+export async function mongoHealthMiddleware(req, res, next) {
+  try {
+    // Проверяем подключение к MongoDB
+    const isConnected = await checkMongoConnection();
+    
+    if (!isConnected) {
+      // Если нет подключения - возвращаем ошибку 503 (Service Unavailable)
+      return res.status(503).json({
+        status: 'error',
+        message: 'MNG - middleware - База данных временно недоступна',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Если подключение есть - добавляем флаг в объект запроса
+    req.mongoHealthy = true;
+    next();
+  } 
+  
+  catch (error) {
+    // В случае непредвиденной ошибки возвращаем 500
+    console.error('MNG - middleware - MongoDB health check failed:', error);
+    
+    res.status(500).json({
+      status: 'error',
+      message: 'MNG - middleware - Internal server error during database health check',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}

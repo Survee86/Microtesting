@@ -1,9 +1,12 @@
 import express  from 'express';
 import dotenv   from 'dotenv';
+import { checkMongoConnection, initializeMongoDB } from './4_db_services/db_check/mng_check/mng_check.js';
 
-/* import authRoutes     from './routes/auth.js';
+/* 
+import authRoutes     from './routes/auth.js';
 import userRoutes     from './routes/user.js';
-import profileRoutes  from './routes/profile.js'; */
+import profileRoutes  from './routes/profile.js'; 
+*/
 
 import cors from "cors";
 import { survee_connection } from './4_db_services/db_config/db_mng.js';
@@ -27,60 +30,33 @@ app.use(express.urlencoded({ extended: true }));
 
 // Подключение роутов
 
-/* app.use('/api/auth',    authRoutes);
+/* 
+app.use('/api/auth',    authRoutes);
 app.use('/api/user',    userRoutes);
-app.use('/api/profile', profileRoutes); */
+app.use('/api/profile', profileRoutes); 
+*/
 
-// Функция для проверки подключений
-async function checkDatabaseConnections() {
-  try {
-    // Проверка MongoDB
-    try {
-      const { survee_db } = await survee_connection();
-      await survee_db.command({ ping: 1 });
-      console.log('✅ app.js / checkDatabaseConnections() - MongoDB connection check: OK');
-    } catch (mongoError) {
-      console.error('❌ app.js / checkDatabaseConnections() - ошибка проверки подключения к MongoDB:', mongoError.message);
-    }
 
-    // Проверка PostgreSQL
-    try {
-      const client = await pg_connection.connect();
-      await client.query('SELECT NOW()');
-      client.release();
-      console.log('✅ app.js / checkDatabaseConnections() - PostgreSQL connection check: OK');
-    } catch (pgError) {
-      console.error('❌ app.js / checkDatabaseConnections() - PostgreSQL connection check failed:', pgError.message);
-    }
-  } catch (error) {
-    console.error('❌ app.js / checkDatabaseConnections() - ошибка в функции: ', error);
-  }
-}
-
-// Запуск периодической проверки (каждые 5 минут)
-function startDatabaseHealthChecks(intervalMinutes = 5) {
-  const intervalMs = intervalMinutes * 60 * 1000;
-  
-  // Первая проверка сразу при старте
-  checkDatabaseConnections();
-  
-  // Периодические проверки
-  const intervalId = setInterval(checkDatabaseConnections, intervalMs);
-  
-  // Остановка проверки при завершении приложения
-  process.on('SIGINT', () => {
-    clearInterval(intervalId);
-    process.exit(0);
-  });
-}
-
-// Запуск периодических проверок
-startDatabaseHealthChecks();
 
 
 
 // Запуск приложения
 
-app.listen(PORT, () => {
-  console.log(`app.js - сервер запущен на порту - ${PORT}`);
+// Запуск приложения
+app.listen(PORT, async () => {
+  console.log(`\n🚀 app.js - сервер запущен на порту - ${PORT}`);
+  
+  // Инициализируем подключение к MongoDB после старта сервера
+  await initializeMongoDB();
+  
+  // Можно добавить дополнительную информацию о состоянии сервера
+  console.log('\n🔹 Server status:');
+  console.log(`- Express server: running on port ${PORT}`);
+  console.log('- MongoDB status: checking...');
+  
+  // Дополнительная проверка через 2 секунды (опционально)
+  setTimeout(async () => {
+    const status = await checkMongoConnection();
+    console.log(`- MongoDB connection: ${status ? '✅ active' : '❌ inactive'}`);
+  }, 2000);
 });
