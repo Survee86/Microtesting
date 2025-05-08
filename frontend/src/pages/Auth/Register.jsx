@@ -15,6 +15,7 @@ import axios from 'axios';
 const Register = () => {
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validationSchema = Yup.object({
@@ -33,6 +34,7 @@ const Register = () => {
   const handleSubmit = async (values) => {
     setIsSubmitting(true);
     setError('');
+    setFieldErrors({});
     
     try {
       const response = await axios.post(
@@ -45,7 +47,8 @@ const Register = () => {
         {
           headers: {
             'Content-Type': 'application/json'
-          }
+          },
+          validateStatus: (status) => status < 500
         }
       );
 
@@ -55,15 +58,33 @@ const Register = () => {
         }
         navigate('/dashboard');
       } else {
+        // Обработка ошибок валидации с сервера
+        if (response.data.errors) {
+          const errors = {};
+          response.data.errors.forEach(err => {
+            errors[err.path] = err.message;
+          });
+          setFieldErrors(errors);
+        }
         setError(response.data.message || 'Ошибка регистрации');
       }
     } catch (err) {
       console.error('Registration error:', err);
-      setError(
-        err.response?.data?.message || 
-        err.message || 
-        'Ошибка регистрации. Пожалуйста, попробуйте позже.'
-      );
+      let errorMessage = err.response?.data?.message || 
+                       err.message || 
+                       'Ошибка регистрации. Пожалуйста, попробуйте позже.';
+      
+      // Парсинг ошибок валидации
+      if (err.response?.data?.errors) {
+        const errors = {};
+        err.response.data.errors.forEach(error => {
+          errors[error.path] = error.message;
+        });
+        setFieldErrors(errors);
+        errorMessage = 'Пожалуйста, исправьте ошибки в форме';
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -79,6 +100,12 @@ const Register = () => {
     validationSchema,
     onSubmit: handleSubmit
   });
+
+  // Комбинируем ошибки Formik и серверные ошибки
+  const getError = (field) => {
+    return fieldErrors[field] || 
+          (formik.touched[field] && formik.errors[field]);
+  };
 
   return (
     <Box sx={{ 
@@ -108,8 +135,8 @@ const Register = () => {
           value={formik.values.firstName}
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
-          error={formik.touched.firstName && Boolean(formik.errors.firstName)}
-          helperText={formik.touched.firstName && formik.errors.firstName}
+          error={Boolean(getError('firstName'))}
+          helperText={getError('firstName')}
           inputProps={{
             autoComplete: "given-name"
           }}
@@ -124,8 +151,8 @@ const Register = () => {
           value={formik.values.email}
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
-          error={formik.touched.email && Boolean(formik.errors.email)}
-          helperText={formik.touched.email && formik.errors.email}
+          error={Boolean(getError('email'))}
+          helperText={getError('email')}
           inputProps={{
             autoComplete: "email"
           }}
@@ -140,8 +167,8 @@ const Register = () => {
           value={formik.values.password}
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
-          error={formik.touched.password && Boolean(formik.errors.password)}
-          helperText={formik.touched.password && formik.errors.password}
+          error={Boolean(getError('password'))}
+          helperText={getError('password')}
           inputProps={{
             autoComplete: "new-password"
           }}
@@ -156,8 +183,8 @@ const Register = () => {
           value={formik.values.confirmPassword}
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
-          error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
-          helperText={formik.touched.confirmPassword && formik.errors.confirmPassword}
+          error={Boolean(getError('confirmPassword'))}
+          helperText={getError('confirmPassword')}
           inputProps={{
             autoComplete: "new-password"
           }}
