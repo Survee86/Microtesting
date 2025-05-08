@@ -111,7 +111,7 @@ const Register = () => {
           error={formik.touched.firstName && Boolean(formik.errors.firstName)}
           helperText={formik.touched.firstName && formik.errors.firstName}
           inputProps={{
-            autoComplete: "firstName"  // Для поля имени
+            autoComplete: "name"  // Для поля имени
           }}
         />
 
