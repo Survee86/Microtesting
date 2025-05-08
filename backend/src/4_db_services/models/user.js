@@ -1,82 +1,133 @@
+/* ОПТИМИЗАЦИЯ
+
+1. Нужно функции проверки коннекта к mongo вынести отсюда, т.к. есть существующая проверка:
+        4_db_services
+        ┣ db_check
+        ┃ ┣ mng_check
+        ┃ ┃ ┗ mng_check.js
+
+2. Всю валидацию вынести в отдельный middleware
+        2_middleware
+          ┣ user_mid
+          ┃ ┗ validateRegForm.js
+
+*/
+
 import { client as mongoClient } from '../db_config/db_mng.js';
 import { pg_connection } from '../db_config/db_pg.js';
 import { v4 as uuidv4 } from 'uuid';
 
-export const createUser = async (userData) => {
+// Валидация входных данных для создания пользователя
+const validateUserData = (userData) => {
+  if (!userData || typeof userData !== 'object') {
+    throw new Error('Invalid user data: expected object');
+  }
+
   const { email, password, name } = userData;
-  const guid = uuidv4();
-  const pgClient = await pg_connection.connect();
   
+  if (!email || typeof email !== 'string') {
+    throw new Error('Invalid email: must be a non-empty string');
+  }
+  
+  if (!password || typeof password !== 'string') {
+    throw new Error('Invalid password: must be a non-empty string');
+  }
+  
+  if (!name || typeof name !== 'string') {
+    throw new Error('Invalid name: must be a non-empty string');
+  }
+};
+
+export const createUser = async (userData) => {
   try {
-    await pgClient.query('BEGIN');
+    validateUserData(userData);
+    checkMongoConnection();
 
-    // 1. Вставка в PostgreSQL
-    const pgResult = await pgClient.query(
-      `INSERT INTO users (guid, email, password_hash)
-       VALUES ($1, $2, $3)
-       RETURNING id, guid, email, created_at`,
-      [guid, email, password]
-    );
-
-    const user = pgResult.rows[0];
-
-    // 2. Подготовка данных для MongoDB
-    const mongoUser = {
-      guid: user.guid,
-      postgresId: user.id,
-      email: user.email,
-      name: name,
-      createdAt: user.created_at, // Используем timestamp из PostgreSQL
-      updatedAt: new Date()
-    };
-
-    // 3. Вставка в MongoDB
-    const mongoDb = mongoClient.db('survee');
+    const { email, password, name } = userData;
+    const guid = uuidv4();
+    const pgClient = await pg_connection.connect();
     
-    // Проверяем существование коллекции
-    const collections = await mongoDb.listCollections({ name: 'users' }).toArray();
-    if (collections.length === 0) {
-      await mongoDb.createCollection('users');
-      await mongoDb.collection('users').createIndexes([
-        { key: { guid: 1 }, unique: true },
-        { key: { email: 1 }, unique: true }
-      ]);
+    try {
+      await pgClient.query('BEGIN');
+
+      // 1. Вставка в PostgreSQL
+      const pgResult = await pgClient.query(
+        `INSERT INTO users (guid, email, password_hash)
+         VALUES ($1, $2, $3)
+         RETURNING id, guid, email, created_at`,
+        [guid, email, password]
+      );
+
+      const user = pgResult.rows[0];
+
+      // 2. Подготовка данных для MongoDB
+      const mongoUser = {
+        guid: user.guid,
+        postgresId: user.id,
+        email: user.email,
+        firstName: '', // Инициализируем поля профиля
+        lastName: '',
+        birthDate: null,
+        name: name, // Для обратной совместимости
+        createdAt: user.created_at,
+        updatedAt: new Date()
+      };
+
+      // 3. Вставка в MongoDB
+      const mongoDb = mongoClient.db('survee');
+      
+      // Проверяем существование коллекции
+      const collections = await mongoDb.listCollections({ name: 'users' }).toArray();
+      if (collections.length === 0) {
+        await mongoDb.createCollection('users');
+        await mongoDb.collection('users').createIndexes([
+          { key: { guid: 1 }, unique: true },
+          { key: { email: 1 }, unique: true },
+          { key: { postgresId: 1 }, unique: true }
+        ]);
+      }
+
+      await mongoDb.collection('users').insertOne(mongoUser);
+
+      await pgClient.query('COMMIT');
+
+      return {
+        id: user.id,
+        guid: user.guid,
+        email: user.email,
+        name: name,
+        createdAt: user.created_at
+      };
+
+    } catch (error) {
+      await pgClient.query('ROLLBACK');
+      
+      if (error.code === '23505') { // PostgreSQL duplicate key
+        error.statusCode = 409;
+        error.message = 'Пользователь с таким email уже существует';
+      } else if (error.code === 11000) { // MongoDB duplicate key
+        error.statusCode = 409;
+        error.message = 'Пользователь с таким email или GUID уже существует';
+      }
+      
+      throw error;
+    } finally {
+      pgClient.release();
     }
-
-    await mongoDb.collection('users').insertOne(mongoUser);
-
-    await pgClient.query('COMMIT');
-
-    return {
-      id: user.id,
-      guid: user.guid,
-      email: user.email,
-      name: name,
-      createdAt: user.created_at
-    };
-
   } catch (error) {
-    await pgClient.query('ROLLBACK');
-    
-    // Специальная обработка ошибки дубликата email
-    if (error.code === '23505') { // PostgreSQL duplicate key
-      error.statusCode = 409;
-      error.message = 'Пользователь с таким email уже существует';
-    } else if (error.code === 11000) { // MongoDB duplicate key
-      error.statusCode = 409;
-      error.message = 'Пользователь с таким email или GUID уже существует';
-    }
-    
     console.error('Error in createUser:', error);
     throw error;
-  } finally {
-    pgClient.release();
   }
 };
 
 export const findUserByEmail = async (email) => {
+  if (!email || typeof email !== 'string') {
+    throw new Error('Invalid email: must be a non-empty string');
+  }
+
   const pgClient = await pg_connection.connect();
   try {
+    
     // 1. Поиск в PostgreSQL
     const pgResult = await pgClient.query(
       'SELECT id, guid, email, password_hash, created_at FROM users WHERE email = $1',
@@ -96,7 +147,10 @@ export const findUserByEmail = async (email) => {
 
     return {
       ...pgResult.rows[0],
-      name: mongoUser.name,
+      firstName: mongoUser.firstName || '',
+      lastName: mongoUser.lastName || '',
+      birthDate: mongoUser.birthDate || null,
+      name: mongoUser.name || '', // Для обратной совместимости
       updatedAt: mongoUser.updatedAt
     };
   } catch (error) {
@@ -108,8 +162,13 @@ export const findUserByEmail = async (email) => {
 };
 
 export const getUserById = async (id) => {
+  if (!id || isNaN(Number(id))) {
+    throw new Error('Invalid user ID: must be a number');
+  }
+
   const pgClient = await pg_connection.connect();
   try {
+
     // 1. Получаем базовые данные из PostgreSQL
     const pgResult = await pgClient.query(
       `SELECT id, guid, email, created_at FROM users WHERE id = $1`,
@@ -120,11 +179,25 @@ export const getUserById = async (id) => {
 
     // 2. Получаем данные из MongoDB
     const mongoDb = mongoClient.db('survee');
-    const mongoUser = await mongoDb.collection('users').findOne({ postgresId: id });
+    const mongoUser = await mongoDb.collection('users').findOne(
+      { postgresId: Number(id) },
+      {
+        projection: {
+          firstName: 1,
+          lastName: 1,
+          birthDate: 1,
+          name: 1,
+          updatedAt: 1
+        }
+      }
+    );
 
     return {
       ...pgResult.rows[0],
-      name: mongoUser?.name || null,
+      firstName: mongoUser?.firstName || '',
+      lastName: mongoUser?.lastName || '',
+      birthDate: mongoUser?.birthDate || null,
+      name: mongoUser?.name || '', // Для обратной совместимости
       updatedAt: mongoUser?.updatedAt || null
     };
   } catch (error) {
@@ -136,37 +209,89 @@ export const getUserById = async (id) => {
 };
 
 export const updateUser = async (id, updateData) => {
-  const { name, ...otherFields } = updateData;
+  if (!id || isNaN(Number(id))) {
+    throw new Error('Invalid user ID: must be a number');
+  }
+
+  if (!updateData || typeof updateData !== 'object') {
+    throw new Error('Invalid update data: expected object');
+  }
+
   const pgClient = await pg_connection.connect();
   const mongoDb = mongoClient.db('survee');
 
   try {
     await pgClient.query('BEGIN');
 
-    // 1. Обновляем MongoDB (данные профиля)
-    if (name) {
-      await mongoDb.collection('users').updateOne(
-        { postgresId: id },
-        { $set: { name, updatedAt: new Date() } }
+    // 1. Подготовка обновлений
+    const pgUpdates = {};
+    const mongoUpdates = { updatedAt: new Date() };
+
+    // Обработка email (обновляем в обеих базах)
+    if (updateData.email !== undefined) {
+      if (typeof updateData.email !== 'string' || !updateData.email.includes('@')) {
+        throw new Error('Invalid email format');
+      }
+      pgUpdates.email = updateData.email;
+      mongoUpdates.email = updateData.email;
+    }
+
+    // Обработка профильных данных (только MongoDB)
+    if (updateData.firstName !== undefined) {
+      mongoUpdates.firstName = updateData.firstName;
+    }
+    if (updateData.lastName !== undefined) {
+      mongoUpdates.lastName = updateData.lastName;
+    }
+    if (updateData.birthDate !== undefined) {
+      mongoUpdates.birthDate = updateData.birthDate;
+    }
+    if (updateData.name !== undefined) { // Для обратной совместимости
+      mongoUpdates.name = updateData.name;
+    }
+
+    // 2. Выполнение обновлений
+    const updatePromises = [];
+    
+    // Обновление PostgreSQL (если есть что обновлять)
+    if (Object.keys(pgUpdates).length > 0) {
+      updatePromises.push(
+        pgClient.query(
+          'UPDATE users SET email = $1 WHERE id = $2',
+          [pgUpdates.email, id]
+        )
       );
     }
 
-    // 2. Обновляем PostgreSQL (если есть другие поля)
-    if (Object.keys(otherFields).length > 0) {
-      const setClause = Object.keys(otherFields)
-        .map((key, i) => `${key} = $${i + 2}`)
-        .join(', ');
+    // Обновление MongoDB
+    updatePromises.push(
+      mongoDb.collection('users').updateOne(
+        { postgresId: Number(id) },
+        { $set: mongoUpdates },
+        { upsert: true }
+      )
+    );
 
-      await pgClient.query(
-        `UPDATE users SET ${setClause} WHERE id = $1`,
-        [id, ...Object.values(otherFields)]
-      );
-    }
-
+    const results = await Promise.all(updatePromises);
     await pgClient.query('COMMIT');
-    return { success: true };
+
+    return {
+      success: true,
+      postgresUpdated: results[0]?.rowCount || 0,
+      mongoUpdated: results[1].modifiedCount
+    };
+
   } catch (error) {
     await pgClient.query('ROLLBACK');
+    
+    if (error.code === '23505') { // PostgreSQL duplicate email
+      error.statusCode = 409;
+      error.message = 'Пользователь с таким email уже существует';
+    } else if (error.code === 11000) { // MongoDB duplicate
+      error.statusCode = 409;
+      error.message = 'Пользователь с таким email уже существует';
+    }
+    
     console.error('Error in updateUser:', error);
     throw error;
   } finally {

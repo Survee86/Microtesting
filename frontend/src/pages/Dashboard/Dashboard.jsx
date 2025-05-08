@@ -115,36 +115,13 @@ const Dashboard = () => {
         const authHeader = { Authorization: `Bearer ${token}` };
         
         // Параллельно выполняем два запроса через fetchWithRefresh:
-        const [userResponse, profileResponse] = await Promise.all([
-          fetchWithRefresh('http://localhost:3001/api/user', { headers: authHeader })
-            .catch(err => {
-              console.error('[Диагностика] Ошибка запроса /api/user:', {
-                status: err.response?.status,
-                data: err.response?.data,
-                headers: err.response?.headers
-              });
-              throw err;
-            }),
-          
-          fetchWithRefresh('http://localhost:3001/api/profile', { headers: authHeader })
-            .catch(err => {
-              console.error('[Диагностика] Ошибка запроса /api/profile:', {
-                status: err.response?.status,
-                data: err.response?.data,
-                headers: err.response?.headers
-              });
-              throw err;
-            })
-        ]);
+        const userResponse = await fetchWithRefresh('/api/user', { headers: authHeader });
+        const userData = userResponse.data;
 
         console.log('[Диагностика] Ответ /api/user:', userResponse.data);
-        console.log('[Диагностика] Ответ /api/profile:', profileResponse.data);
         
         // Объединяем полученные данные
-        const mergedData = {
-          ...userResponse.data,
-          ...profileResponse.data
-        };
+        const mergedData = userResponse.data;
 
         console.log('[Диагностика] Объединенные данные:', mergedData);
         setUser(mergedData);

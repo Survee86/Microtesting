@@ -1,23 +1,37 @@
-import { getUserById, updateUser } from '../4_db_services/models/user.js';
-import Profile from '../4_db_services/models/profile.js'; // Добавьте в начало файла
+import { getUserById } from '../4_db_services/models/user.js';
+import { client as mongoClient } from '../4_db_services/db_config/db_mng.js';
+
 
 export const getCurrentUser = async (req, res) => {
   try {
     const user = await getUserById(req.user.userId);
-
-    // Добавляем проверку на подключение MongoDB
-    let profile = {};
-    if (mongoose.connection.readyState === 1) {
-      profile =
-        (await Profile.findOne({ userId: req.user.userId }).lean()) || {};
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
+
+    // Получаем данные профиля из MongoDB
+    const mongoDb = mongoClient.db('survee');
+    const profile = await mongoDb.collection('users').findOne(
+      { postgresId: Number(req.user.userId) },
+      {
+        projection: {
+          firstName: 1,
+          lastName: 1,
+          birthDate: 1,
+          name: 1,
+          updatedAt: 1
+        }
+      }
+    );
 
     res.json({
       id: user.id,
       email: user.email,
-      firstName: profile.firstName || '',
-      lastName: profile.lastName || '',
-      name: user.name, // Из PostgreSQL/MongoDB users
+      firstName: profile?.firstName || '',
+      lastName: profile?.lastName || '',
+      name: profile?.name || user.name,
+      birthDate: profile?.birthDate || null
     });
   } catch (error) {
     console.error('Error:', error);
@@ -27,37 +41,8 @@ export const getCurrentUser = async (req, res) => {
 
 export const updateCurrentUser = async (req, res) => {
   try {
-    // Проверяем, есть ли данные для обновления
-    if (!req.body || Object.keys(req.body).length === 0) {
-      return res.status(400).json({ message: 'No data provided for update' });
-    }
 
-    // Разрешенные поля для обновления
-    const allowedFields = ['firstName', 'lastName', 'birthDate', 'email'];
-    const updateData = {};
-
-    // Фильтруем поля, которые можно обновлять
-    for (const field of allowedFields) {
-      if (req.body[field] !== undefined) {
-        updateData[field] = req.body[field];
-      }
-    }
-
-    // Если после фильтрации не осталось полей
-    if (Object.keys(updateData).length === 0) {
-      return res.status(400).json({
-        message: 'No valid fields provided for update',
-        allowedFields,
-      });
-    }
-
-    const updatedUser = await updateUser(req.user.userId, updateData);
-    res.json(updatedUser);
   } catch (error) {
-    console.error('Update user error:', error);
-    res.status(500).json({
-      message: 'Error updating user data',
-      ...(process.env.NODE_ENV === 'development' && { error: error.message }),
-    });
+
   }
 };

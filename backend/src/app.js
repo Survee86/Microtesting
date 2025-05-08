@@ -11,8 +11,6 @@ import { checkMongoConnection, initializeMongoDB } from './4_db_services/db_chec
  
 import authRoutes     from './1_routes/auth.js'
 import userRoutes     from './1_routes/user.js';
-import profileRoutes  from './1_routes/profile.js';
-
 
 import cors from "cors";
 
@@ -46,7 +44,6 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/auth',    authRoutes);
 app.use('/api/user',    userRoutes);
-app.use('/api/profile', profileRoutes); 
 
 
 /* 
