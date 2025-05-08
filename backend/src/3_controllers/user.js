@@ -14,6 +14,7 @@ export const getCurrentUser = async (req, res) => {
     const mongoDb = mongoClient.db('survee');
     const profile = await mongoDb.collection('users').findOne(
       { postgresId: Number(req.user.userId) },
+      console.log (postgresId),
       {
         projection: {
           firstName: 1,
