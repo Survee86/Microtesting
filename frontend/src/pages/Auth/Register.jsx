@@ -111,7 +111,7 @@ const Register = () => {
           error={formik.touched.firstName && Boolean(formik.errors.firstName)}
           helperText={formik.touched.firstName && formik.errors.firstName}
           inputProps={{
-            autoComplete: "name"  // Для поля имени
+            autoComplete: "given-name"
           }}
         />
 
@@ -127,7 +127,7 @@ const Register = () => {
           error={formik.touched.email && Boolean(formik.errors.email)}
           helperText={formik.touched.email && formik.errors.email}
           inputProps={{
-            autoComplete: "email"  // Для поля email
+            autoComplete: "email"
           }}
         />
 
@@ -143,7 +143,7 @@ const Register = () => {
           error={formik.touched.password && Boolean(formik.errors.password)}
           helperText={formik.touched.password && formik.errors.password}
           inputProps={{
-            autoComplete: "new-password"  // Для нового пароля
+            autoComplete: "new-password"
           }}
         />
 
@@ -159,7 +159,7 @@ const Register = () => {
           error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
           helperText={formik.touched.confirmPassword && formik.errors.confirmPassword}
           inputProps={{
-            autoComplete: "new-password"  // Для подтверждения пароля
+            autoComplete: "new-password"
           }}
         />
 
