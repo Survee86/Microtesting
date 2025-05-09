@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
-import { createUser, findUserByEmail } from '../4_db_services/models/user.js';
-import { generateTokens } from '../utils/jwt.js';
-import { pg_connection } from '../4_db_services/db_config/db_pg.js'
+import { createUser, findUserByEmail } from '../../4_db_services/models/user.js';
+import { generateTokens } from '../../utils/jwt.js';
+import { pg_connection } from '../../4_db_services/db_config/db_pg.js'
 
 // ФУНКЦИЯ РЕГИСТРАЦИИ ПОЛЬЗОВАТЕЛЯ
 

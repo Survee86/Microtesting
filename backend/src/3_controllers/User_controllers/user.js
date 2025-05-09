@@ -1,13 +1,11 @@
-import { getUserById } from '../4_db_services/models/user.js';
-import { client as mongoClient } from '../4_db_services/db_config/db_mng.js';
-import { updateUser } from '../4_db_services/models/user.js';
-
-
+import { getUserById } from '../../4_db_services/models/user.js';
+import { client as mongoClient } from '../../4_db_services/db_config/db_mng.js';
+import { updateUser } from '../../4_db_services/models/user.js';
 
 export const getCurrentUser = async (req, res) => {
   try {
     const user = await getUserById(req.user.userId);
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -22,8 +20,8 @@ export const getCurrentUser = async (req, res) => {
           lastName: 1,
           birthDate: 1,
           name: 1,
-          updatedAt: 1
-        }
+          updatedAt: 1,
+        },
       }
     );
 
@@ -33,7 +31,7 @@ export const getCurrentUser = async (req, res) => {
       firstName: profile?.firstName || '',
       lastName: profile?.lastName || '',
       name: profile?.name || user.name,
-      birthDate: profile?.birthDate || null
+      birthDate: profile?.birthDate || null,
     });
     console.log(profile);
   } catch (error) {
@@ -57,7 +55,7 @@ export const updateUserProfile = async (req, res) => {
     });
   } catch (error) {
     console.error('Ошибка обновления пользователя:', error);
-    
+
     const statusCode = error.statusCode || 500;
     const message = error.message || 'Произошла ошибка при обновлении данных';
 
