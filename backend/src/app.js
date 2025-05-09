@@ -11,7 +11,7 @@ import {
   initializeMongoDB,
 } from './4_db_services/db_check/mng_check/mng_check.js';
 
-import authRoutes from './1_routes/auth.js';
+import authRoutes from './1_routes/User_routes/user.js';
 import userRoutes from './1_routes/User_routes/user.js';
 
 import cors from 'cors';
