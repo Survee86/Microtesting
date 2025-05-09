@@ -44,7 +44,7 @@ export const getCurrentUser = async (req, res) => {
 
 export const updateUserProfile = async (req, res) => {
   try {
-    const userId = req.user.id; // ID текущего пользователя
+    const userId = req.user.userId || req.user.id; // Проверяем оба варианта
     const updateData = req.body;
 
     // Выполняем обновление
