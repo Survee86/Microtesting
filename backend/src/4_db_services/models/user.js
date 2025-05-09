@@ -220,33 +220,24 @@ export const updateUser = async (id, updateData) => {
 
     // 1. Подготовка обновлений
     const pgUpdates = {};
-    const mongoUpdates = { updatedAt: new Date() };
+    const mongoUpdates = { 
+      updatedAt: new Date(),
+      ...(updateData.firstName && { firstName: updateData.firstName }),
+      ...(updateData.lastName && { lastName: updateData.lastName }),
+      ...(updateData.birthDate && { birthDate: new Date(updateData.birthDate) })
+    };
 
-    // Обработка email (обновляем в обеих базах)
-    if (updateData.email !== undefined) {
-      if (typeof updateData.email !== 'string' || !updateData.email.includes('@')) {
-        throw new Error('Invalid email format');
-      }
+    // Обработка email (если он есть в updateData)
+    if (updateData.email) {
       pgUpdates.email = updateData.email;
       mongoUpdates.email = updateData.email;
-    }
-
-    // Обработка профильных данных (только MongoDB)
-    if (updateData.firstName !== undefined) {
-      mongoUpdates.firstName = updateData.firstName;
-    }
-    if (updateData.lastName !== undefined) {
-      mongoUpdates.lastName = updateData.lastName;
-    }
-    if (updateData.birthDate !== undefined) {
-      mongoUpdates.birthDate = updateData.birthDate;
     }
 
     // 2. Выполнение обновлений
     const updatePromises = [];
     
-    // Обновление PostgreSQL (если есть что обновлять)
-    if (Object.keys(pgUpdates).length > 0) {
+    // Обновление PostgreSQL (только если нужно обновить email)
+    if (pgUpdates.email) {
       updatePromises.push(
         pgClient.query(
           'UPDATE users SET email = $1 WHERE id = $2',
@@ -255,27 +246,29 @@ export const updateUser = async (id, updateData) => {
       );
     }
 
-    // Обновление MongoDB
+    // Обновление MongoDB (все профильные данные)
     updatePromises.push(
       mongoDb.collection('users').updateOne(
         { postgresId: Number(id) },
-        { $set: mongoUpdates },
-        { upsert: true }
+        { $set: mongoUpdates }
       )
     );
 
-    const results = await Promise.all(updatePromises);
+    await Promise.all(updatePromises);
     await pgClient.query('COMMIT');
+
+    // 3. Получаем обновленные данные для возврата
+    const updatedUser = await getUserById(id);
 
     return {
       success: true,
-      postgresUpdated: results[0]?.rowCount || 0,
-      mongoUpdated: results[1].modifiedCount
+      user: updatedUser
     };
 
   } catch (error) {
     await pgClient.query('ROLLBACK');
     
+    // Обработка ошибок дубликатов
     if (error.code === '23505') { // PostgreSQL duplicate email
       error.statusCode = 409;
       error.message = 'Пользователь с таким email уже существует';

@@ -1,5 +1,7 @@
 import { getUserById } from '../4_db_services/models/user.js';
 import { client as mongoClient } from '../4_db_services/db_config/db_mng.js';
+import { updateUser } from '../4_db_services/models/user.js';
+
 
 
 export const getCurrentUser = async (req, res) => {
@@ -40,10 +42,29 @@ export const getCurrentUser = async (req, res) => {
   }
 };
 
-export const updateCurrentUser = async (req, res) => {
+export const updateUserProfile = async (req, res) => {
   try {
+    const userId = req.user.id; // ID текущего пользователя
+    const updateData = req.body;
 
+    // Выполняем обновление
+    const result = await updateUser(userId, updateData);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Данные пользователя успешно обновлены',
+      updatedFields: Object.keys(updateData),
+    });
   } catch (error) {
+    console.error('Ошибка обновления пользователя:', error);
+    
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Произошла ошибка при обновлении данных';
 
+    return res.status(statusCode).json({
+      success: false,
+      message: message,
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
   }
 };

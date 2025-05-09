@@ -21,14 +21,6 @@ export const validateRegForm = async (req, res, next) => {
       });
     }
 
-    // 3. Проверка длины пароля
-    if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: 'Пароль должен содержать минимум 6 символов',
-      });
-    }
-
     // 4. Проверка существования пользователя
     const existingUser = await findUserByEmail(email);
     if (existingUser) {
@@ -37,6 +29,16 @@ export const validateRegForm = async (req, res, next) => {
         message: 'Пользователь с таким email уже существует',
       });
     }
+
+    // 3. Проверка длины пароля
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Пароль должен содержать минимум 6 символов',
+      });
+    }
+
+
 
     // Если все проверки пройдены, переходим к следующему middleware/контроллеру
     next();
