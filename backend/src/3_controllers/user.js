@@ -33,6 +33,7 @@ export const getCurrentUser = async (req, res) => {
       name: profile?.name || user.name,
       birthDate: profile?.birthDate || null
     });
+    console.log(profile);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ message: 'Server error' });
