@@ -1,76 +1,95 @@
 // Импорт необходимых модулей из React и сторонних библиотек
-import React, { useState, useEffect } from 'react'; // Базовые хуки React
+import React, { useState, useEffect } from 'react';
 import { 
-  Box, // Контейнер для layout
-  Typography, // Текстовые элементы
-  Paper, // Карточка с тенями
-  TextField, // Поле ввода
-  IconButton, // Кнопка с иконкой
-  Button, // Обычная кнопка
-  Snackbar, // Всплывающее уведомление
-  Alert, // Компонент alert для Snackbar
-  Table, // Таблица
-  TableHead, // Шапка таблицы
-  TableBody, // Тело таблицы
-  TableRow, // Строка таблицы
-  TableCell, // Ячейка таблицы
-  TableContainer // Контейнер для таблицы
-} from '@mui/material'; // Компоненты Material-UI
-import EditIcon from '@mui/icons-material/Edit'; // Иконка редактирования
-import SaveIcon from '@mui/icons-material/Save'; // Иконка сохранения
-import VisibilityIcon from '@mui/icons-material/Visibility'; // Иконка просмотра
-import AddIcon from '@mui/icons-material/Add'; // Иконка добавления
-import axios from 'axios'; // HTTP-клиент для запросов к API
-import './Dashboard.css'; // Локальные стили
+  Box, 
+  Typography, 
+  Paper, 
+  TextField, 
+  IconButton, 
+  Button, 
+  Snackbar, 
+  Alert, 
+  Table, 
+  TableHead, 
+  TableBody, 
+  TableRow, 
+  TableCell, 
+  TableContainer,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  OutlinedInput,
+  Backdrop,
+  CircularProgress,
+  Popover
+} from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
+import MinimizeIcon from '@mui/icons-material/Minimize';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import axios from 'axios';
+import './Dashboard.css';
+import {DatePicker} from "@mui/x-date-pickers"
+
 
 // Основной компонент Dashboard
 const Dashboard = () => {
-  // Состояние для хранения данных пользователя
+  // Состояния для данных пользователя и опросов
   const [user, setUser] = useState({
-    firstName: '', // Имя
-    lastName: '', // Фамилия
-    birthDate: '', // Дата рождения
-    email: '' // Электронная почта
+    firstName: '',
+    lastName: '',
+    birthDate: '',
+    email: ''
   });
 
-  // Состояние для хранения данных опросов
   const [surveys, setSurveys] = useState([]);
-
-  // Состояние для отслеживания, какое поле сейчас редактируется
   const [editingField, setEditingField] = useState(null);
-  // Временное значение при редактировании поля
   const [tempValue, setTempValue] = useState('');
-  // Состояние для управления Snackbar (уведомлениями)
   const [snackbar, setSnackbar] = useState({ 
-    open: false, // Видимость уведомления
-    message: '', // Текст сообщения
-    severity: 'success' // Тип уведомления (success/error/info/warning)
+    open: false,
+    message: '',
+    severity: 'success'
   });
 
-  /**
-   * Функция для выполнения запросов с автоматическим обновлением токена
-   * @param {string} url - URL для запроса
-   * @param {object} options - Опции запроса (headers, method и т.д.)
-   * @returns {Promise} - Результат запроса
-   */
+  // Состояния для формы создания опроса
+  const [surveyFormOpen, setSurveyFormOpen] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
+  const [surveyData, setSurveyData] = useState({
+    name: '',
+    description: '',
+    startDate: null,
+    startTime: null,
+    endDate: null,
+    endTime: null,
+    visibility: 'Открытый',
+    linkType: 'Многоразовая',
+    participants: [],
+    questions: []
+  });
+
+  // Состояния для управления всплывающими меню
+  const [excelMenuAnchor, setExcelMenuAnchor] = useState(null);
+  const [excelMenuType, setExcelMenuType] = useState('');
+
+  // Функция для выполнения запросов с обновлением токена
   const fetchWithRefresh = async (url, options = {}) => {
     try {
-      // Пытаемся выполнить оригинальный запрос
       return await axios(url, options);
     } catch (error) {
-      // Если ошибка связана с просроченным токеном (код TOKEN_EXPIRED)
       if (error.response?.data?.code === 'TOKEN_EXPIRED') {
         try {
-          // Получаем refreshToken из localStorage
           const refreshToken = localStorage.getItem('refreshToken');
-          
-          // Запрашиваем новый access token
           const { data } = await axios.post('/api/auth/refresh', { refreshToken });
-          
-          // Сохраняем новый токен
           localStorage.setItem('token', data.token);
-          
-          // Обновляем заголовок Authorization для повторного запроса
           const newOptions = {
             ...options,
             headers: {
@@ -78,11 +97,8 @@ const Dashboard = () => {
               Authorization: `Bearer ${data.token}`
             }
           };
-          
-          // Повторяем оригинальный запрос с новым токеном
           return await axios(url, newOptions);
         } catch (refreshError) {
-          // Если не удалось обновить токен - разлогиниваем пользователя
           console.error('Ошибка обновления токена:', refreshError);
           localStorage.removeItem('token');
           localStorage.removeItem('refreshToken');
@@ -94,26 +110,16 @@ const Dashboard = () => {
           throw refreshError;
         }
       }
-      // Для всех других ошибок просто пробрасываем исключение
       throw error;
     }
   };
 
-  // Эффект для загрузки данных пользователя и опросов при монтировании компонента
+  // Загрузка данных при монтировании компонента
   useEffect(() => {
-    /**
-     * Асинхронная функция для получения данных пользователя
-     * с обработкой обновления токена
-     */
     const fetchUserData = async () => {
       try {
-        // Получаем токен из localStorage
         const token = localStorage.getItem('token');
-        console.log('[Диагностика] Токен авторизации:', token); // Диагностика
-
-        // Проверяем наличие токена
         if (!token) {
-          console.error('[Ошибка] Токен авторизации отсутствует');
           setSnackbar({
             open: true,
             message: 'Требуется авторизация. Пожалуйста, войдите в систему',
@@ -122,30 +128,18 @@ const Dashboard = () => {
           return;
         }
         
-        // Конфигурация заголовков для запросов
         const authHeader = { Authorization: `Bearer ${token}` };
-        
-        // Параллельно выполняем запросы через fetchWithRefresh:
         const [userResponse, surveysResponse] = await Promise.all([
           fetchWithRefresh('/api/user', { headers: authHeader }),
           fetchWithRefresh('/api/surveys/read', { headers: authHeader })
         ]);
 
-        console.log('[Диагностика] Ответ /api/user:', userResponse.data);
-        console.log('[Диагностика] Ответ /api/surveys:', surveysResponse.data);
-        
-        // Устанавливаем данные пользователя
         setUser(userResponse.data);
-        
-        // Устанавливаем данные опросов, если они есть
         if (surveysResponse.data && surveysResponse.data.length > 0) {
           setSurveys(surveysResponse.data);
         }
-        
       } catch (error) {
         console.error('[Ошибка]', error.response?.data || error.message);
-        
-        // Обработка ошибки 403 (Forbidden)
         if (error.response?.status === 403) {
           localStorage.removeItem('token');
           setSnackbar({
@@ -163,23 +157,20 @@ const Dashboard = () => {
       }
     };
 
-    // Вызываем функцию загрузки данных
     fetchUserData();
-  }, []); // Пустой массив зависимостей = выполняется только при монтировании
+  }, []);
 
-  // Обработчик начала редактирования поля
+  // Обработчики для формы профиля
   const handleEdit = (field) => {
-    setEditingField(field); // Устанавливаем какое поле редактируется
-    setTempValue(user[field]); // Сохраняем текущее значение во временное состояние
+    setEditingField(field);
+    setTempValue(user[field]);
   };
 
-  // Обработчик сохранения изменений поля
   const handleSave = async (field) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('Требуется авторизация');
 
-      // Используем fetchWithRefresh вместо прямого вызова axios
       await fetchWithRefresh('/api/user', {
         method: 'PATCH',
         data: { [field]: tempValue },
@@ -190,17 +181,9 @@ const Dashboard = () => {
         withCredentials: true
       });
 
-      // Обновляем состояние только после успешного запроса
       setUser(prev => ({ ...prev, [field]: tempValue }));
       setSnackbar({ open: true, message: 'Данные сохранены!', severity: 'success' });
-      
     } catch (error) {
-      console.error('Ошибка сохранения:', {
-        message: error.message,
-        response: error.response?.data,
-        config: error.config
-      });
-      
       setSnackbar({ 
         open: true, 
         message: error.response?.data?.message || error.message || 'Ошибка сети',
@@ -211,32 +194,124 @@ const Dashboard = () => {
     }
   };
 
-  // Обработчик отмены редактирования
   const handleCancel = () => {
     setEditingField(null);
   };
 
-  // Обработчик клика по кнопке добавления опроса
+  // Обработчики для формы опроса
   const handleAddSurvey = () => {
-    // Здесь будет логика добавления нового опроса
-    console.log('Добавление нового опроса');
+    setSurveyFormOpen(true);
+  };
+
+  const handleCloseSurveyForm = () => {
+    setConfirmClose(true);
+  };
+
+  const handleConfirmClose = (confirm) => {
+    setConfirmClose(false);
+    if (confirm) {
+      setSurveyFormOpen(false);
+      setSurveyData({
+        name: '',
+        description: '',
+        startDate: null,
+        startTime: null,
+        endDate: null,
+        endTime: null,
+        visibility: 'Открытый',
+        linkType: 'Многоразовая',
+        participants: [],
+        questions: []
+      });
+    }
+  };
+
+  const handleSurveyChange = (field, value) => {
+    setSurveyData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSaveSurvey = () => {
+    // Здесь будет логика сохранения опроса
+    console.log('Сохранение опроса:', surveyData);
     setSnackbar({
       open: true,
-      message: 'Функция добавления опроса будет реализована позже',
+      message: 'Опрос успешно сохранен',
+      severity: 'success'
+    });
+    setSurveyFormOpen(false);
+  };
+
+  // Обработчики для таблицы участников
+  const addParticipant = () => {
+    setSurveyData(prev => ({
+      ...prev,
+      participants: [...prev.participants, {
+        lastName: '',
+        firstName: '',
+        middleName: '',
+        email: ''
+      }]
+    }));
+  };
+
+  const handleParticipantChange = (index, field, value) => {
+    const updatedParticipants = [...surveyData.participants];
+    updatedParticipants[index][field] = value;
+    setSurveyData(prev => ({
+      ...prev,
+      participants: updatedParticipants
+    }));
+  };
+
+  // Обработчики для таблицы вопросов
+  const addQuestion = () => {
+    setSurveyData(prev => ({
+      ...prev,
+      questions: [...prev.questions, {
+        number: prev.questions.length + 1,
+        text: '',
+        answerType: 'один вариант',
+        image: null
+      }]
+    }));
+  };
+
+  const handleQuestionChange = (index, field, value) => {
+    const updatedQuestions = [...surveyData.questions];
+    updatedQuestions[index][field] = value;
+    setSurveyData(prev => ({
+      ...prev,
+      questions: updatedQuestions
+    }));
+  };
+
+  // Обработчики для Excel меню
+  const handleExcelMenuClick = (event, type) => {
+    setExcelMenuAnchor(event.currentTarget);
+    setExcelMenuType(type);
+  };
+
+  const handleExcelMenuClose = () => {
+    setExcelMenuAnchor(null);
+  };
+
+  const handleExcelAction = (action) => {
+    console.log(`${action} для ${excelMenuType}`);
+    handleExcelMenuClose();
+    setSnackbar({
+      open: true,
+      message: `Функция "${action}" для ${excelMenuType} будет реализована позже`,
       severity: 'info'
     });
   };
 
-  /**
-   * Вспомогательная функция для рендеринга поля профиля
-   * @param {string} label - Отображаемое название поля
-   * @param {string} field - Ключ поля в объекте user
-   * @returns {JSX.Element} - React-элемент поля
-   */
+  // Вспомогательные функции рендеринга
   const renderField = (label, field) => (
     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
       <Typography variant="subtitle1" sx={{ width: 150 }}>{label}:</Typography>
-      
       {editingField === field ? (
         <>
           <TextField
@@ -261,10 +336,6 @@ const Dashboard = () => {
     </Box>
   );
 
-  /**
-   * Функция для рендеринга блока с опросами
-   * @returns {JSX.Element} - React-элемент блока опросов
-   */
   const renderSurveysBlock = () => (
     <Paper elevation={3} sx={{ p: 3, mt: 4 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
@@ -272,10 +343,10 @@ const Dashboard = () => {
         <IconButton 
           onClick={handleAddSurvey}
           sx={{ 
-            backgroundColor: '#4caf50', // Зеленый цвет
+            backgroundColor: '#4caf50',
             color: 'white',
             '&:hover': {
-              backgroundColor: '#388e3c', // Темно-зеленый при наведении
+              backgroundColor: '#388e3c',
             }
           }}
         >
@@ -329,6 +400,370 @@ const Dashboard = () => {
     </Paper>
   );
 
+  // Рендер формы создания опроса
+  const renderSurveyForm = () => (
+    <Dialog
+      open={surveyFormOpen}
+      onClose={handleCloseSurveyForm}
+      fullScreen
+      sx={{ 
+        '& .MuiDialog-container': {
+          alignItems: 'flex-start'
+        }
+      }}
+    >
+      <DialogTitle sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        backgroundColor: '#f5f5f5',
+        borderBottom: '1px solid #e0e0e0'
+      }}>
+        <Typography variant="h6">Создание нового опроса</Typography>
+        <Box>
+          <IconButton onClick={() => console.log('Свернуть')}>
+            <MinimizeIcon />
+          </IconButton>
+          <IconButton onClick={handleCloseSurveyForm}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+      </DialogTitle>
+      
+      <DialogContent sx={{ pt: 3 }}>
+        {/* Блок реквизитов опроса */}
+        <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
+          <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>Реквизиты опроса</Typography>
+          
+          <Box sx={{ mb: 3 }}>
+            <TextField
+              fullWidth
+              label="Наименование опроса"
+              value={surveyData.name}
+              onChange={(e) => handleSurveyChange('name', e.target.value)}
+              sx={{ mb: 2 }}
+            />
+            
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              label="Краткое описание опроса"
+              value={surveyData.description}
+              onChange={(e) => handleSurveyChange('description', e.target.value)}
+              sx={{ mb: 2 }}
+            />
+            
+            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <DatePicker
+                label="Дата начала опроса"
+                value={surveyData.startDate}
+                onChange={(newValue) => handleSurveyChange('startDate', newValue)}
+                sx={{ flex: 1 }}
+                renderInput={(params) => <TextField {...params} />}
+              />
+              
+              <TimePicker
+                label="Время начала опроса"
+                value={surveyData.startTime}
+                onChange={(newValue) => handleSurveyChange('startTime', newValue)}
+                sx={{ flex: 1 }}
+                renderInput={(params) => <TextField {...params} />}
+              />
+            </Box>
+            
+            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <DatePicker
+                label="Дата завершения опроса"
+                value={surveyData.endDate}
+                onChange={(newValue) => handleSurveyChange('endDate', newValue)}
+                sx={{ flex: 1 }}
+                renderInput={(params) => <TextField {...params} />}
+              />
+              
+              <TimePicker
+                label="Время завершения опроса"
+                value={surveyData.endTime}
+                onChange={(newValue) => handleSurveyChange('endTime', newValue)}
+                sx={{ flex: 1 }}
+                renderInput={(params) => <TextField {...params} />}
+              />
+            </Box>
+            
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <FormControl sx={{ flex: 1 }}>
+                <InputLabel>Видимость опроса</InputLabel>
+                <Select
+                  value={surveyData.visibility}
+                  onChange={(e) => handleSurveyChange('visibility', e.target.value)}
+                  input={<OutlinedInput label="Видимость опроса" />}
+                >
+                  <MenuItem value="Открытый">Открытый</MenuItem>
+                  <MenuItem value="Закрытый">Закрытый</MenuItem>
+                </Select>
+              </FormControl>
+              
+              <FormControl sx={{ flex: 1 }}>
+                <InputLabel>Тип ссылки</InputLabel>
+                <Select
+                  value={surveyData.linkType}
+                  onChange={(e) => handleSurveyChange('linkType', e.target.value)}
+                  input={<OutlinedInput label="Тип ссылки" />}
+                >
+                  <MenuItem value="Единоразовая">Единоразовая</MenuItem>
+                  <MenuItem value="Многоразовая">Многоразовая</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          </Box>
+        </Paper>
+        
+        {/* Блок участников опроса */}
+        <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h6" gutterBottom>Участники опроса</Typography>
+            <Box>
+              <IconButton 
+                onClick={addParticipant}
+                sx={{ 
+                  backgroundColor: '#4caf50',
+                  color: 'white',
+                  mr: 1,
+                  '&:hover': {
+                    backgroundColor: '#388e3c',
+                  }
+                }}
+              >
+                <AddIcon />
+              </IconButton>
+              
+              <Button
+                variant="outlined"
+                startIcon={<CloudUploadIcon />}
+                endIcon={<ArrowDropDownIcon />}
+                onClick={(e) => handleExcelMenuClick(e, 'participants')}
+              >
+                Загрузить из Excel
+              </Button>
+            </Box>
+          </Box>
+          
+          {surveyData.participants.length > 0 ? (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Фамилия</TableCell>
+                    <TableCell>Имя</TableCell>
+                    <TableCell>Отчество</TableCell>
+                    <TableCell>Email</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {surveyData.participants.map((participant, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={participant.lastName}
+                          onChange={(e) => handleParticipantChange(index, 'lastName', e.target.value)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={participant.firstName}
+                          onChange={(e) => handleParticipantChange(index, 'firstName', e.target.value)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={participant.middleName}
+                          onChange={(e) => handleParticipantChange(index, 'middleName', e.target.value)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={participant.email}
+                          onChange={(e) => handleParticipantChange(index, 'email', e.target.value)}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : (
+            <Typography variant="body1" color="textSecondary">
+              Добавьте участников опроса
+            </Typography>
+          )}
+        </Paper>
+        
+        {/* Блок вопросов */}
+        <Paper elevation={2} sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h6" gutterBottom>Вопросы</Typography>
+            <Box>
+              <IconButton 
+                onClick={addQuestion}
+                sx={{ 
+                  backgroundColor: '#4caf50',
+                  color: 'white',
+                  mr: 1,
+                  '&:hover': {
+                    backgroundColor: '#388e3c',
+                  }
+                }}
+              >
+                <AddIcon />
+              </IconButton>
+              
+              <Button
+                variant="outlined"
+                startIcon={<CloudUploadIcon />}
+                endIcon={<ArrowDropDownIcon />}
+                onClick={(e) => handleExcelMenuClick(e, 'questions')}
+              >
+                Загрузить из Excel
+              </Button>
+            </Box>
+          </Box>
+          
+          {surveyData.questions.length > 0 ? (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>№</TableCell>
+                    <TableCell>Текст вопроса</TableCell>
+                    <TableCell>Тип ответа</TableCell>
+                    <TableCell>Изображение</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {surveyData.questions.map((question, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{question.number}</TableCell>
+                      <TableCell>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={question.text}
+                          onChange={(e) => handleQuestionChange(index, 'text', e.target.value)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <FormControl fullWidth size="small">
+                          <Select
+                            value={question.answerType}
+                            onChange={(e) => handleQuestionChange(index, 'answerType', e.target.value)}
+                          >
+                            <MenuItem value="один вариант">Один вариант</MenuItem>
+                            <MenuItem value="несколько вариантов">Несколько вариантов</MenuItem>
+                            <MenuItem value="текстовое поле">Текстовое поле</MenuItem>
+                            <MenuItem value="шкала от 0 до 10">Шкала от 0 до 10</MenuItem>
+                            <MenuItem value="набор смайлов">Набор смайлов</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outlined"
+                          component="label"
+                          size="small"
+                        >
+                          Загрузить
+                          <input
+                            type="file"
+                            hidden
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                handleQuestionChange(index, 'image', file);
+                              }
+                            }}
+                          />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : (
+            <Typography variant="body1" color="textSecondary">
+              Добавьте вопросы для опроса
+            </Typography>
+          )}
+        </Paper>
+      </DialogContent>
+      
+      <DialogActions sx={{ p: 3, borderTop: '1px solid #e0e0e0' }}>
+        <Button 
+          variant="contained" 
+          onClick={handleSaveSurvey}
+          sx={{ mr: 2 }}
+        >
+          Сохранить
+        </Button>
+        <Button 
+          variant="outlined" 
+          onClick={handleCloseSurveyForm}
+        >
+          Отмена
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
+  // Рендер меню для Excel
+  const renderExcelMenu = () => (
+    <Popover
+      open={Boolean(excelMenuAnchor)}
+      anchorEl={excelMenuAnchor}
+      onClose={handleExcelMenuClose}
+      anchorOrigin={{
+        vertical: 'bottom',
+        horizontal: 'right',
+      }}
+      transformOrigin={{
+        vertical: 'top',
+        horizontal: 'right',
+      }}
+    >
+      <Box sx={{ p: 1 }}>
+        <MenuItem onClick={() => handleExcelAction('Загрузить список')}>Загрузить список</MenuItem>
+        <MenuItem onClick={() => handleExcelAction('Скачать шаблон')}>Скачать шаблон</MenuItem>
+      </Box>
+    </Popover>
+  );
+
+  // Рендер диалога подтверждения закрытия
+  const renderConfirmDialog = () => (
+    <Dialog
+      open={confirmClose}
+      onClose={() => handleConfirmClose(false)}
+      maxWidth="xs"
+      fullWidth
+    >
+      <DialogTitle>Подтверждение</DialogTitle>
+      <DialogContent>
+        <Typography>Вы уверены, что хотите закрыть форму? Все несохраненные данные будут потеряны.</Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => handleConfirmClose(false)}>Отмена</Button>
+        <Button onClick={() => handleConfirmClose(true)} color="primary">Закрыть</Button>
+      </DialogActions>
+    </Dialog>
+  );
+
   // Основной рендер компонента
   return (
     <div className="dashboard-page">
@@ -348,6 +783,13 @@ const Dashboard = () => {
 
         {renderSurveysBlock()}
       </Box>
+
+      {/* Форма создания опроса */}
+      {renderSurveyForm()}
+      
+      {/* Вспомогательные компоненты */}
+      {renderExcelMenu()}
+      {renderConfirmDialog()}
 
       <Snackbar
         open={snackbar.open}
