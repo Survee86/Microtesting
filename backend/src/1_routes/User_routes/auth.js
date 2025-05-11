@@ -8,7 +8,7 @@ const router = express.Router();
 
 
 router.post('/register',    mongoHealthMiddleware, validateRegForm, register);
-router.post('/login',       mongoHealthMiddleware, login);
+router.post('/login',       login);
 router.post('/refresh',     refreshToken);
 
 export default router;
