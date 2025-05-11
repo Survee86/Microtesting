@@ -39,9 +39,6 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
 const Dashboard = () => {
-
-  const [isFormMinimized, setIsFormMinimized] = useState(false);
-
   const [user, setUser] = useState({
     firstName: '',
     lastName: '',
@@ -195,12 +192,9 @@ const Dashboard = () => {
     setSurveyFormOpen(true);
   };
 
-const handleCloseSurveyForm = () => {
-  if (isFormMinimized) {
-    setIsFormMinimized(false);
-  }
-  setConfirmClose(true);
-};
+  const handleCloseSurveyForm = () => {
+    setConfirmClose(true);
+  };
 
   const handleConfirmClose = (confirm) => {
     setConfirmClose(false);
@@ -392,188 +386,358 @@ const handleCloseSurveyForm = () => {
     </Paper>
   );
 
-const renderSurveyForm = () => (
-  <>
-    {isFormMinimized ? (
-      // Свернутое состояние
-      <Box 
-        sx={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          bgcolor: 'background.paper',
-          borderTop: '1px solid #ddd',
-          p: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          zIndex: 1000
-        }}
-      >
-        <Typography variant="body1">Создание нового опроса</Typography>
+  const renderSurveyForm = () => (
+    <Dialog
+      open={surveyFormOpen}
+      onClose={handleCloseSurveyForm}
+      fullScreen
+      sx={{ 
+        '& .MuiDialog-container': {
+          alignItems: 'flex-start'
+        }
+      }}
+    >
+      <DialogTitle sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        backgroundColor: '#f5f5f5',
+        borderBottom: '1px solid #e0e0e0'
+      }}>
+        <Typography component="span" variant="h6">Создание нового опроса</Typography>
         <Box>
-          <IconButton 
-            onClick={() => setIsFormMinimized(false)}
-            sx={{ 
-              backgroundColor: '#ffeb3b',
-              color: 'rgba(0, 0, 0, 0.87)',
-              mr: 1,
-              '&:hover': { backgroundColor: '#fbc02d' }
-            }}
-          >
+          <IconButton onClick={() => console.log('Свернуть')}>
             <MinimizeIcon />
           </IconButton>
-          <IconButton 
-            onClick={handleCloseSurveyForm}
-            sx={{ 
-              backgroundColor: '#f44336',
-              color: 'white',
-              '&:hover': { backgroundColor: '#d32f2f' }
-            }}
-          >
+          <IconButton onClick={handleCloseSurveyForm}>
             <CloseIcon />
           </IconButton>
         </Box>
-      </Box>
-    ) : (
-      // Развернутое состояние
-      <Dialog
-        open={surveyFormOpen}
-        onClose={handleCloseSurveyForm}
-        fullScreen
-        sx={{ 
-          '& .MuiDialog-container': {
-            alignItems: 'flex-start'
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          backgroundColor: '#f5f5f5',
-          borderBottom: '1px solid #e0e0e0'
-        }}>
-          <Typography component="span" variant="h6">Создание нового опроса</Typography>
-          <Box>
-            <IconButton onClick={() => setIsFormMinimized(true)}>
-              <MinimizeIcon />
-            </IconButton>
-            <IconButton onClick={handleCloseSurveyForm}>
-              <CloseIcon />
-            </IconButton>
+      </DialogTitle>
+      
+      <DialogContent sx={{ pt: 3 }}>
+        <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
+          <Typography component="h3" variant="h6" gutterBottom sx={{ mb: 3 }}>Реквизиты опроса</Typography>
+          
+          <Box sx={{ mb: 3 }}>
+            <TextField
+              fullWidth
+              label="Наименование опроса"
+              value={surveyData.name}
+              onChange={(e) => handleSurveyChange('name', e.target.value)}
+              sx={{ mb: 2 }}
+            />
+            
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              label="Краткое описание опроса"
+              value={surveyData.description}
+              onChange={(e) => handleSurveyChange('description', e.target.value)}
+              sx={{ mb: 2 }}
+            />
+            
+            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <Box sx={{ flex: 1 }}>
+                <InputLabel shrink>Дата начала опроса</InputLabel>
+                <DatePicker
+                  selected={surveyData.startDate}
+                  onChange={(date) => handleSurveyChange('startDate', date)}
+                  customInput={
+                    <TextField
+                      fullWidth
+                      size="small"
+                    />
+                  }
+                />
+              </Box>
+              
+              <Box sx={{ flex: 1 }}>
+                <InputLabel shrink>Время начала опроса</InputLabel>
+                <DatePicker
+                  selected={surveyData.startTime}
+                  onChange={(time) => handleSurveyChange('startTime', time)}
+                  showTimeSelect
+                  showTimeSelectOnly
+                  timeIntervals={15}
+                  timeCaption="Time"
+                  dateFormat="h:mm aa"
+                  customInput={
+                    <TextField
+                      fullWidth
+                      size="small"
+                    />
+                  }
+                />
+              </Box>
+            </Box>
+            
+            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <Box sx={{ flex: 1 }}>
+                <InputLabel shrink>Дата завершения опроса</InputLabel>
+                <DatePicker
+                  selected={surveyData.endDate}
+                  onChange={(date) => handleSurveyChange('endDate', date)}
+                  customInput={
+                    <TextField
+                      fullWidth
+                      size="small"
+                    />
+                  }
+                />
+              </Box>
+              
+              <Box sx={{ flex: 1 }}>
+                <InputLabel shrink>Время завершения опроса</InputLabel>
+                <DatePicker
+                  selected={surveyData.endTime}
+                  onChange={(time) => handleSurveyChange('endTime', time)}
+                  showTimeSelect
+                  showTimeSelectOnly
+                  timeIntervals={15}
+                  timeCaption="Time"
+                  dateFormat="h:mm aa"
+                  customInput={
+                    <TextField
+                      fullWidth
+                      size="small"
+                    />
+                  }
+                />
+              </Box>
+            </Box>
+            
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <FormControl sx={{ flex: 1 }}>
+                <InputLabel>Видимость опроса</InputLabel>
+                <Select
+                  value={surveyData.visibility}
+                  onChange={(e) => handleSurveyChange('visibility', e.target.value)}
+                  input={<OutlinedInput label="Видимость опроса" />}
+                >
+                  <MenuItem value="Открытый">Открытый</MenuItem>
+                  <MenuItem value="Закрытый">Закрытый</MenuItem>
+                </Select>
+              </FormControl>
+              
+              <FormControl sx={{ flex: 1 }}>
+                <InputLabel>Тип ссылки</InputLabel>
+                <Select
+                  value={surveyData.linkType}
+                  onChange={(e) => handleSurveyChange('linkType', e.target.value)}
+                  input={<OutlinedInput label="Тип ссылки" />}
+                >
+                  <MenuItem value="Единоразовая">Единоразовая</MenuItem>
+                  <MenuItem value="Многоразовая">Многоразовая</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
           </Box>
-        </DialogTitle>
+        </Paper>
         
-        <DialogContent sx={{ pt: 3 }}>
-          {/* Блок реквизитов опроса */}
-          <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
-            <Typography component="h3" variant="h6" gutterBottom sx={{ mb: 3 }}>Реквизиты опроса</Typography>
-            
-            <Box sx={{ mb: 3 }}>
-              <TextField
-                fullWidth
-                label="Наименование опроса"
-                value={surveyData.name}
-                onChange={(e) => handleSurveyChange('name', e.target.value)}
-                sx={{ mb: 2 }}
-              />
+        <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography component="h3" variant="h6" gutterBottom>Участники опроса</Typography>
+            <Box>
+              <IconButton 
+                onClick={addParticipant}
+                sx={{ 
+                  backgroundColor: '#4caf50',
+                  color: 'white',
+                  mr: 1,
+                  '&:hover': {
+                    backgroundColor: '#388e3c',
+                  }
+                }}
+              >
+                <AddIcon />
+              </IconButton>
               
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                label="Краткое описание опроса"
-                value={surveyData.description}
-                onChange={(e) => handleSurveyChange('description', e.target.value)}
-                sx={{ mb: 2 }}
-              />
-              
-              {/* Остальные поля реквизитов */}
+              <Button
+                variant="outlined"
+                startIcon={<CloudUploadIcon />}
+                endIcon={<ArrowDropDownIcon />}
+                onClick={(e) => handleExcelMenuClick(e, 'participants')}
+              >
+                Загрузить из Excel
+              </Button>
             </Box>
-          </Paper>
+          </Box>
           
-          {/* Блок участников опроса */}
-          <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography component="h3" variant="h6" gutterBottom>Участники опроса</Typography>
-              <Box>
-                <IconButton 
-                  onClick={addParticipant}
-                  sx={{ 
-                    backgroundColor: '#4caf50',
-                    color: 'white',
-                    mr: 1,
-                    '&:hover': { backgroundColor: '#388e3c' }
-                  }}
-                >
-                  <AddIcon />
-                </IconButton>
-                <Button
-                  variant="outlined"
-                  startIcon={<CloudUploadIcon />}
-                  endIcon={<ArrowDropDownIcon />}
-                  onClick={(e) => handleExcelMenuClick(e, 'participants')}
-                >
-                  Загрузить из Excel
-                </Button>
-              </Box>
-            </Box>
-            
-            {/* Таблица участников */}
-          </Paper>
-          
-          {/* Блок вопросов */}
-          <Paper elevation={2} sx={{ p: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography component="h3" variant="h6" gutterBottom>Вопросы</Typography>
-              <Box>
-                <IconButton 
-                  onClick={addQuestion}
-                  sx={{ 
-                    backgroundColor: '#4caf50',
-                    color: 'white',
-                    mr: 1,
-                    '&:hover': { backgroundColor: '#388e3c' }
-                  }}
-                >
-                  <AddIcon />
-                </IconButton>
-                <Button
-                  variant="outlined"
-                  startIcon={<CloudUploadIcon />}
-                  endIcon={<ArrowDropDownIcon />}
-                  onClick={(e) => handleExcelMenuClick(e, 'questions')}
-                >
-                  Загрузить из Excel
-                </Button>
-              </Box>
-            </Box>
-            
-            {/* Таблица вопросов */}
-          </Paper>
-        </DialogContent>
+          {surveyData.participants.length > 0 ? (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Фамилия</TableCell>
+                    <TableCell>Имя</TableCell>
+                    <TableCell>Отчество</TableCell>
+                    <TableCell>Email</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {surveyData.participants.map((participant, index) => (
+                    <TableRow key={`participant-${participant.id || index}`}>
+                      <TableCell>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={participant.lastName}
+                          onChange={(e) => handleParticipantChange(index, 'lastName', e.target.value)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={participant.firstName}
+                          onChange={(e) => handleParticipantChange(index, 'firstName', e.target.value)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={participant.middleName}
+                          onChange={(e) => handleParticipantChange(index, 'middleName', e.target.value)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={participant.email}
+                          onChange={(e) => handleParticipantChange(index, 'email', e.target.value)}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : (
+            <Typography variant="body1" color="textSecondary">
+              Добавьте участников опроса
+            </Typography>
+          )}
+        </Paper>
         
-        <DialogActions sx={{ p: 3, borderTop: '1px solid #e0e0e0' }}>
-          <Button 
-            variant="contained" 
-            onClick={handleSaveSurvey}
-            sx={{ mr: 2 }}
-          >
-            Сохранить
-          </Button>
-          <Button 
-            variant="outlined" 
-            onClick={handleCloseSurveyForm}
-          >
-            Отмена
-          </Button>
-        </DialogActions>
-      </Dialog>
-    )}
-  </>
-);
+        <Paper elevation={2} sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography component="h3" variant="h6" gutterBottom>Вопросы</Typography>
+            <Box>
+              <IconButton 
+                onClick={addQuestion}
+                sx={{ 
+                  backgroundColor: '#4caf50',
+                  color: 'white',
+                  mr: 1,
+                  '&:hover': {
+                    backgroundColor: '#388e3c',
+                  }
+                }}
+              >
+                <AddIcon />
+              </IconButton>
+              
+              <Button
+                variant="outlined"
+                startIcon={<CloudUploadIcon />}
+                endIcon={<ArrowDropDownIcon />}
+                onClick={(e) => handleExcelMenuClick(e, 'questions')}
+              >
+                Загрузить из Excel
+              </Button>
+            </Box>
+          </Box>
+          
+          {surveyData.questions.length > 0 ? (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>№</TableCell>
+                    <TableCell>Текст вопроса</TableCell>
+                    <TableCell>Тип ответа</TableCell>
+                    <TableCell>Изображение</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {surveyData.questions.map((question, index) => (
+                    <TableRow key={`question-${question.id || index}`}>
+                      <TableCell>{question.number}</TableCell>
+                      <TableCell>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={question.text}
+                          onChange={(e) => handleQuestionChange(index, 'text', e.target.value)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <FormControl fullWidth size="small">
+                          <Select
+                            value={question.answerType}
+                            onChange={(e) => handleQuestionChange(index, 'answerType', e.target.value)}
+                          >
+                            <MenuItem value="один вариант">Один вариант</MenuItem>
+                            <MenuItem value="несколько вариантов">Несколько вариантов</MenuItem>
+                            <MenuItem value="текстовое поле">Текстовое поле</MenuItem>
+                            <MenuItem value="шкала от 0 до 10">Шкала от 0 до 10</MenuItem>
+                            <MenuItem value="набор смайлов">Набор смайлов</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outlined"
+                          component="label"
+                          size="small"
+                        >
+                          Загрузить
+                          <input
+                            type="file"
+                            hidden
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                handleQuestionChange(index, 'image', file);
+                              }
+                            }}
+                          />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : (
+            <Typography variant="body1" color="textSecondary">
+              Добавьте вопросы для опроса
+            </Typography>
+          )}
+        </Paper>
+      </DialogContent>
+      
+      <DialogActions sx={{ p: 3, borderTop: '1px solid #e0e0e0' }}>
+        <Button 
+          variant="contained" 
+          onClick={handleSaveSurvey}
+          sx={{ mr: 2 }}
+        >
+          Сохранить
+        </Button>
+        <Button 
+          variant="outlined" 
+          onClick={handleCloseSurveyForm}
+        >
+          Отмена
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 
   const renderExcelMenu = () => (
     <Popover
