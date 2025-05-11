@@ -1,8 +1,8 @@
 import express from 'express';
-import { register, login } from '../3_controllers/auth.js';
-import { mongoHealthMiddleware } from '../2_middleware/checkMongo.js'
-import { refreshToken } from '../3_controllers/auth.js';
-import { validateRegForm } from '../2_middleware/user_mid/validateRegForm.js';
+import { register, login }          from '../../3_controllers/User_controllers/auth.js';
+import { mongoHealthMiddleware }    from '../../2_middleware/checkMongo.js'
+import { refreshToken }             from '../../3_controllers/User_controllers/auth.js';
+import { validateRegForm }          from '../../2_middleware/user_mid/validateRegForm.js';
 
 const router = express.Router();
 

@@ -84,8 +84,3 @@ export const verifyAccessToken = async (token) => {
     throw err;
   }
 };
-
-// Пример использования (можно удалить в продакшене):
-// const token = generateAccessToken({ userId: 123 });
-// console.log('Сгенерированный токен:', token);
-// console.log('Проверка токена:', verifyToken(token));
