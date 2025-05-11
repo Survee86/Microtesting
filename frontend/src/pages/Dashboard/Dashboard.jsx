@@ -24,8 +24,6 @@ import {
   InputLabel,
   FormControl,
   OutlinedInput,
-  Backdrop,
-  CircularProgress,
   Popover
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
@@ -38,8 +36,8 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import axios from 'axios';
 import './Dashboard.css';
-import {DatePicker} from "@mui/x-date-pickers"
-
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 // Основной компонент Dashboard
 const Dashboard = () => {
@@ -234,7 +232,6 @@ const Dashboard = () => {
   };
 
   const handleSaveSurvey = () => {
-    // Здесь будет логика сохранения опроса
     console.log('Сохранение опроса:', surveyData);
     setSnackbar({
       open: true,
@@ -455,39 +452,73 @@ const Dashboard = () => {
             />
             
             <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-              <DatePicker
-                label="Дата начала опроса"
-                value={surveyData.startDate}
-                onChange={(newValue) => handleSurveyChange('startDate', newValue)}
-                sx={{ flex: 1 }}
-                renderInput={(params) => <TextField {...params} />}
-              />
+              <Box sx={{ flex: 1 }}>
+                <InputLabel shrink>Дата начала опроса</InputLabel>
+                <DatePicker
+                  selected={surveyData.startDate}
+                  onChange={(date) => handleSurveyChange('startDate', date)}
+                  customInput={
+                    <TextField
+                      fullWidth
+                      size="small"
+                    />
+                  }
+                />
+              </Box>
               
-              <TimePicker
-                label="Время начала опроса"
-                value={surveyData.startTime}
-                onChange={(newValue) => handleSurveyChange('startTime', newValue)}
-                sx={{ flex: 1 }}
-                renderInput={(params) => <TextField {...params} />}
-              />
+              <Box sx={{ flex: 1 }}>
+                <InputLabel shrink>Время начала опроса</InputLabel>
+                <DatePicker
+                  selected={surveyData.startTime}
+                  onChange={(time) => handleSurveyChange('startTime', time)}
+                  showTimeSelect
+                  showTimeSelectOnly
+                  timeIntervals={15}
+                  timeCaption="Time"
+                  dateFormat="h:mm aa"
+                  customInput={
+                    <TextField
+                      fullWidth
+                      size="small"
+                    />
+                  }
+                />
+              </Box>
             </Box>
             
             <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-              <DatePicker
-                label="Дата завершения опроса"
-                value={surveyData.endDate}
-                onChange={(newValue) => handleSurveyChange('endDate', newValue)}
-                sx={{ flex: 1 }}
-                renderInput={(params) => <TextField {...params} />}
-              />
+              <Box sx={{ flex: 1 }}>
+                <InputLabel shrink>Дата завершения опроса</InputLabel>
+                <DatePicker
+                  selected={surveyData.endDate}
+                  onChange={(date) => handleSurveyChange('endDate', date)}
+                  customInput={
+                    <TextField
+                      fullWidth
+                      size="small"
+                    />
+                  }
+                />
+              </Box>
               
-              <TimePicker
-                label="Время завершения опроса"
-                value={surveyData.endTime}
-                onChange={(newValue) => handleSurveyChange('endTime', newValue)}
-                sx={{ flex: 1 }}
-                renderInput={(params) => <TextField {...params} />}
-              />
+              <Box sx={{ flex: 1 }}>
+                <InputLabel shrink>Время завершения опроса</InputLabel>
+                <DatePicker
+                  selected={surveyData.endTime}
+                  onChange={(time) => handleSurveyChange('endTime', time)}
+                  showTimeSelect
+                  showTimeSelectOnly
+                  timeIntervals={15}
+                  timeCaption="Time"
+                  dateFormat="h:mm aa"
+                  customInput={
+                    <TextField
+                      fullWidth
+                      size="small"
+                    />
+                  }
+                />
+              </Box>
             </Box>
             
             <Box sx={{ display: 'flex', gap: 2 }}>
