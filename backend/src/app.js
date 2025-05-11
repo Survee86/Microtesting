@@ -11,8 +11,9 @@ import {
   initializeMongoDB,
 } from './4_db_services/db_check/mng_check/mng_check.js';
 
-import authRoutes from './1_routes/User_routes/auth.js';
-import userRoutes from './1_routes/User_routes/user.js';
+import authRoutes    from './1_routes/User_routes/auth.js';
+import userRoutes    from './1_routes/User_routes/user.js';
+import survee_router from './1_routes/Survee_routes/router_survee_crud.js';
 
 import cors from 'cors';
 
@@ -40,10 +41,23 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Подключение роутов
+// ПОДКЛЮЧЕНИЕ РОУТОВ
 
-app.use('/api/auth', authRoutes);
-app.use('/api/user', userRoutes);
+          // USER ROUTES
+          app.use('/api/auth', authRoutes);
+          app.use('/api/user', userRoutes);
+
+
+          // SURVEE ROUTES
+          app.use(
+            (req, res, next) => 
+            {
+              console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+              next();
+            });
+          app.use('/api/surveys', survee_router);
+
+
 
 /* 
 =================================

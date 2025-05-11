@@ -8,10 +8,18 @@ import {
   IconButton, // Кнопка с иконкой
   Button, // Обычная кнопка
   Snackbar, // Всплывающее уведомление
-  Alert // Компонент alert для Snackbar
+  Alert, // Компонент alert для Snackbar
+  Table, // Таблица
+  TableHead, // Шапка таблицы
+  TableBody, // Тело таблицы
+  TableRow, // Строка таблицы
+  TableCell, // Ячейка таблицы
+  TableContainer // Контейнер для таблицы
 } from '@mui/material'; // Компоненты Material-UI
 import EditIcon from '@mui/icons-material/Edit'; // Иконка редактирования
 import SaveIcon from '@mui/icons-material/Save'; // Иконка сохранения
+import VisibilityIcon from '@mui/icons-material/Visibility'; // Иконка просмотра
+import AddIcon from '@mui/icons-material/Add'; // Иконка добавления
 import axios from 'axios'; // HTTP-клиент для запросов к API
 import './Dashboard.css'; // Локальные стили
 
@@ -24,6 +32,9 @@ const Dashboard = () => {
     birthDate: '', // Дата рождения
     email: '' // Электронная почта
   });
+
+  // Состояние для хранения данных опросов
+  const [surveys, setSurveys] = useState([]);
 
   // Состояние для отслеживания, какое поле сейчас редактируется
   const [editingField, setEditingField] = useState(null);
@@ -88,7 +99,7 @@ const Dashboard = () => {
     }
   };
 
-  // Эффект для загрузки данных пользователя при монтировании компонента
+  // Эффект для загрузки данных пользователя и опросов при монтировании компонента
   useEffect(() => {
     /**
      * Асинхронная функция для получения данных пользователя
@@ -114,17 +125,22 @@ const Dashboard = () => {
         // Конфигурация заголовков для запросов
         const authHeader = { Authorization: `Bearer ${token}` };
         
-        // Параллельно выполняем два запроса через fetchWithRefresh:
-        const userResponse = await fetchWithRefresh('/api/user', { headers: authHeader });
-        const userData = userResponse.data;
+        // Параллельно выполняем запросы через fetchWithRefresh:
+        const [userResponse, surveysResponse] = await Promise.all([
+          fetchWithRefresh('/api/user', { headers: authHeader }),
+          fetchWithRefresh('/api/surveys/read', { headers: authHeader })
+        ]);
 
         console.log('[Диагностика] Ответ /api/user:', userResponse.data);
+        console.log('[Диагностика] Ответ /api/surveys:', surveysResponse.data);
         
-        // Объединяем полученные данные
-        const mergedData = userResponse.data;
-
-        console.log('[Диагностика] Объединенные данные:', mergedData);
-        setUser(mergedData);
+        // Устанавливаем данные пользователя
+        setUser(userResponse.data);
+        
+        // Устанавливаем данные опросов, если они есть
+        if (surveysResponse.data && surveysResponse.data.length > 0) {
+          setSurveys(surveysResponse.data);
+        }
         
       } catch (error) {
         console.error('[Ошибка]', error.response?.data || error.message);
@@ -200,6 +216,17 @@ const Dashboard = () => {
     setEditingField(null);
   };
 
+  // Обработчик клика по кнопке добавления опроса
+  const handleAddSurvey = () => {
+    // Здесь будет логика добавления нового опроса
+    console.log('Добавление нового опроса');
+    setSnackbar({
+      open: true,
+      message: 'Функция добавления опроса будет реализована позже',
+      severity: 'info'
+    });
+  };
+
   /**
    * Вспомогательная функция для рендеринга поля профиля
    * @param {string} label - Отображаемое название поля
@@ -234,6 +261,74 @@ const Dashboard = () => {
     </Box>
   );
 
+  /**
+   * Функция для рендеринга блока с опросами
+   * @returns {JSX.Element} - React-элемент блока опросов
+   */
+  const renderSurveysBlock = () => (
+    <Paper elevation={3} sx={{ p: 3, mt: 4 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Typography variant="h6">Опросы</Typography>
+        <IconButton 
+          onClick={handleAddSurvey}
+          sx={{ 
+            backgroundColor: '#4caf50', // Зеленый цвет
+            color: 'white',
+            '&:hover': {
+              backgroundColor: '#388e3c', // Темно-зеленый при наведении
+            }
+          }}
+        >
+          <AddIcon />
+        </IconButton>
+      </Box>
+      
+      {surveys.length === 0 ? (
+        <Typography variant="body1" color="textSecondary">
+          У вас пока нет созданных опросов
+        </Typography>
+      ) : (
+        <TableContainer component={Paper}>
+          <Table sx={{ minWidth: 650 }} aria-label="таблица опросов">
+            <TableHead>
+              <TableRow>
+                <TableCell>№</TableCell>
+                <TableCell>Наименование</TableCell>
+                <TableCell>Автор</TableCell>
+                <TableCell>Статус</TableCell>
+                <TableCell>Видимость</TableCell>
+                <TableCell>Отправлено</TableCell>
+                <TableCell>Пройдено</TableCell>
+                <TableCell>Действия</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {surveys.map((survey, index) => (
+                <TableRow key={survey.id}>
+                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{survey.title}</TableCell>
+                  <TableCell>{survey.author || 'Вы'}</TableCell>
+                  <TableCell>{survey.status}</TableCell>
+                  <TableCell>{survey.visibility}</TableCell>
+                  <TableCell>{survey.sentCount || 0}</TableCell>
+                  <TableCell>{survey.completedCount || 0}</TableCell>
+                  <TableCell>
+                    <IconButton aria-label="редактировать" size="small">
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton aria-label="просмотреть" size="small">
+                      <VisibilityIcon fontSize="small" />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+    </Paper>
+  );
+
   // Основной рендер компонента
   return (
     <div className="dashboard-page">
@@ -250,6 +345,8 @@ const Dashboard = () => {
           {renderField('Email', 'email')}
           {renderField('Дата рождения', 'birthDate')}
         </Paper>
+
+        {renderSurveysBlock()}
       </Box>
 
       <Snackbar

@@ -17,6 +17,7 @@ export async function mongoHealthMiddleware(req, res, next) {
     
     // Если подключение есть - добавляем флаг в объект запроса
     req.mongoHealthy = true;
+    console.log ("MongoHealthMiddleware - Ok");
     next();
   } 
   
