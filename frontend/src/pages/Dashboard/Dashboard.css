@@ -1,0 +1,23 @@
+.minimized-form {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid #ddd;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 1000;
+}
+
+.expand-btn {
+  background-color: #ffeb3b !important; /* желтый */
+  margin-right: 8px;
+}
+
+.close-btn {
+  background-color: #f44336 !important; /* красный */
+  color: white !important;
+}
